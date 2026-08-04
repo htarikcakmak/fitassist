@@ -1,4 +1,4 @@
-import { useState, useContext } from 'react';
+import { useState, useEffect, useContext } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { ThemeContext } from '../context/ThemeContext';
 
@@ -9,15 +9,55 @@ export default function Progress() {
   const [metricData, setMetricData] = useState<Record<string, {date: string, value: number}[]>>({});
   const { themeBg, themePrimary } = useContext(ThemeContext);
 
+  // 1. Veritabanından tüm gelişim kayıtlarını çek
+  useEffect(() => {
+    fetch('http://localhost:8080/api/progress/all')
+      .then(res => res.json())
+      .then((data: any[]) => {
+        const formattedData: Record<string, {date: string, value: number}[]> = {
+          'Kilo': [], 'Yağ Oranı': [], 'Kas Oranı': []
+        };
+        
+        data.forEach(item => {
+          const d = new Date(item.date);
+          const dateStr = d.getDate() + ' ' + d.toLocaleString('tr-TR', { month: 'short' });
+          
+          if (item.weight) formattedData['Kilo'].push({ date: dateStr, value: item.weight });
+          if (item.bodyFatPercentage) formattedData['Yağ Oranı'].push({ date: dateStr, value: item.bodyFatPercentage });
+          if (item.muscleMass) formattedData['Kas Oranı'].push({ date: dateStr, value: item.muscleMass });
+        });
+        
+        setMetricData(formattedData);
+      })
+      .catch(err => console.error("Veri çekme hatası:", err));
+  }, []);
+
+  // 2. Yeni ölçümü veritabanına kaydet
   const handleSave = () => {
     if (!inputValue) return;
-    const today = new Date();
-    const dateStr = today.getDate() + ' ' + today.toLocaleString('tr-TR', { month: 'short' });
-    setMetricData(prev => ({
-      ...prev,
-      [activeMetric]: [...(prev[activeMetric] || []), { date: dateStr, value: parseFloat(inputValue) }]
-    }));
-    setInputValue('');
+    
+    const payload: any = {};
+    if (activeMetric === 'Kilo') payload.weight = parseFloat(inputValue);
+    if (activeMetric === 'Yağ Oranı') payload.bodyFatPercentage = parseFloat(inputValue);
+    if (activeMetric === 'Kas Oranı') payload.muscleMass = parseFloat(inputValue);
+
+    fetch('http://localhost:8080/api/progress/add', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    })
+    .then(res => res.json())
+    .then(savedItem => {
+      const d = new Date(savedItem.date);
+      const dateStr = d.getDate() + ' ' + d.toLocaleString('tr-TR', { month: 'short' });
+      
+      setMetricData(prev => ({
+        ...prev,
+        [activeMetric]: [...(prev[activeMetric] || []), { date: dateStr, value: parseFloat(inputValue) }]
+      }));
+      setInputValue('');
+    })
+    .catch(err => console.error("Kaydetme hatası:", err));
   };
 
   const currentData = metricData[activeMetric] || [];

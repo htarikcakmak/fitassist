@@ -1,4 +1,4 @@
-import { useState, useContext } from 'react';
+import { useState, useEffect, useContext } from 'react';
 import { Droplets, Plus, GlassWater, Check, Pencil } from 'lucide-react';
 import { ThemeContext } from '../context/ThemeContext';
 
@@ -6,8 +6,49 @@ export default function WaterTracker() {
   const [water, setWater] = useState(0);
   const [target, setTarget] = useState(3000);
   const [isEditing, setIsEditing] = useState(false);
-  const [tempTarget, setTempTarget] = useState(target.toString());
+  const [tempTarget, setTempTarget] = useState('3000');
   const { themePrimary } = useContext(ThemeContext);
+
+  // 1. ADIM: Sayfa yüklendiğinde Spring Boot'tan bugünün verisini çek
+  useEffect(() => {
+    fetch('http://localhost:8080/api/water/today')
+      .then(res => res.json())
+      .then(data => {
+        setWater(data.consumedAmount);
+        setTarget(data.targetAmount);
+        setTempTarget(data.targetAmount.toString());
+      })
+      .catch(err => console.error("Veritabanına bağlanılamadı:", err));
+  }, []);
+
+  // 2. ADIM: Su veya hedef değiştiğinde bunu veritabanına (Spring Boot) gönder
+  const updateDatabase = (newWater: number, newTarget: number) => {
+    fetch('http://localhost:8080/api/water/update', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ consumedAmount: newWater, targetAmount: newTarget })
+    }).catch(err => console.error("Veri kaydedilemedi:", err));
+  };
+
+  const addWater = (amount: number) => {
+    const newWater = water + amount;
+    setWater(newWater);
+    updateDatabase(newWater, target);
+  };
+
+  const handleTargetSave = () => {
+    const newTarget = parseInt(tempTarget);
+    if (!isNaN(newTarget) && newTarget > 0) {
+      setTarget(newTarget);
+      updateDatabase(water, newTarget);
+    }
+    setIsEditing(false);
+  };
+
+  const resetWater = () => {
+    setWater(0);
+    updateDatabase(0, target);
+  };
 
   const waterOptions = [
     { amount: 250, label: '1 Bardak', glasses: 1 },
@@ -15,12 +56,6 @@ export default function WaterTracker() {
     { amount: 750, label: '3 Bardak', glasses: 3 },
     { amount: 1000, label: '1 Şişe', glasses: 0 }
   ];
-
-  const handleTargetSave = () => {
-    const newTarget = parseInt(tempTarget);
-    if (!isNaN(newTarget) && newTarget > 0) setTarget(newTarget);
-    setIsEditing(false);
-  };
 
   return (
     <div className="p-6 md:p-10 space-y-10 pb-32 md:pb-10 max-w-3xl mx-auto animate-in fade-in duration-500 flex flex-col items-center">
@@ -50,7 +85,7 @@ export default function WaterTracker() {
       <div className="w-full bg-white/40 backdrop-blur-xl rounded-[2.5rem] p-6 md:p-8 shadow-sm border border-white/60">
         <div className="grid grid-cols-2 gap-4">
           {waterOptions.map(option => (
-            <button key={option.amount} onClick={() => setWater(prev => prev + option.amount)} className="bg-white/60 hover:bg-white border border-white/80 py-4 px-2 rounded-2xl active:scale-95 transition-all flex flex-col items-center justify-center shadow-sm">
+            <button key={option.amount} onClick={() => addWater(option.amount)} className="bg-white/60 hover:bg-white border border-white/80 py-4 px-2 rounded-2xl active:scale-95 transition-all flex flex-col items-center justify-center shadow-sm">
               <div className="flex items-center space-x-1 mb-1"><Plus size={16} strokeWidth={3} /><span className="text-lg font-extrabold">{option.amount} ml</span></div>
               <div className="flex items-center gap-1 opacity-70"><span className="text-xs font-bold mr-1">{option.label}</span>
                 <div className="flex gap-0.5">{option.glasses > 0 ? Array.from({ length: option.glasses }).map((_, i) => <GlassWater key={i} size={14} strokeWidth={2.5} />) : <Droplets size={14} strokeWidth={2.5} />}</div>
@@ -58,7 +93,7 @@ export default function WaterTracker() {
             </button>
           ))}
         </div>
-        <button onClick={() => setWater(0)} className="w-full mt-6 py-4 rounded-2xl bg-white/30 hover:bg-white/50 font-extrabold active:scale-95 transition-all border border-white/40 shadow-sm">Sıfırla</button>
+        <button onClick={resetWater} className="w-full mt-6 py-4 rounded-2xl bg-white/30 hover:bg-white/50 font-extrabold active:scale-95 transition-all border border-white/40 shadow-sm">Sıfırla</button>
       </div>
     </div>
   );
