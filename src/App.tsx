@@ -1,9 +1,10 @@
 import { useState, useContext } from 'react';
 import { BrowserRouter, Routes, Route, NavLink, Outlet, useLocation } from 'react-router-dom';
-import { Home, Dumbbell, Utensils, Droplets, LineChart as LineChartIcon, Settings as SettingsIcon } from 'lucide-react';
+import { Home, Dumbbell, Utensils, Droplets, LineChart as LineChartIcon, Settings as SettingsIcon, Moon } from 'lucide-react';
 
 // Dış dosyaları içeri aktarıyoruz
 import { ThemeContext } from './context/ThemeContext';
+import Sleep from './pages/Sleep';
 import Dashboard from './pages/Dashboard';
 import Workout from './pages/Workout';
 import Progress from './pages/Progress';
@@ -57,6 +58,7 @@ function Layout() {
     { path: '/nutrition', icon: Utensils, label: 'Beslenme' },
     { path: '/water', icon: Droplets, label: 'Su' },
     { path: '/progress', icon: LineChartIcon, label: 'Gelişim' },
+    { path: '/sleep', icon: Moon, label: 'Uyku' },
     { path: '/settings', icon: SettingsIcon, label: 'Ayarlar' },
   ];
 
@@ -127,6 +129,7 @@ export default function App() {
           <Route path="/" element={<Layout />}>
             <Route index element={<Dashboard />} />
             <Route path="workout" element={<Workout />} />
+            <Route path="/sleep" element={<Sleep />} />
             <Route path="nutrition" element={<Nutrition />} />
             <Route path="water" element={<WaterTracker />} />
             <Route path="progress" element={<Progress />} />
