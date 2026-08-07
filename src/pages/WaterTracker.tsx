@@ -1,6 +1,7 @@
 import { useState, useEffect, useContext } from 'react';
 import { Droplets, Plus, GlassWater, Check, Pencil } from 'lucide-react';
 import { ThemeContext } from '../context/ThemeContext';
+import { useTranslation } from 'react-i18next'; // Çeviri kütüphanesi eklendi
 
 export default function WaterTracker() {
   const [water, setWater] = useState(0);
@@ -8,6 +9,9 @@ export default function WaterTracker() {
   const [isEditing, setIsEditing] = useState(false);
   const [tempTarget, setTempTarget] = useState('3000');
   const { themePrimary } = useContext(ThemeContext);
+
+  // Çeviri fonksiyonunu aktifleştiriyoruz
+  const { t } = useTranslation();
 
   // 1. ADIM: Sayfa yüklendiğinde Spring Boot'tan bugünün verisini çek
   useEffect(() => {
@@ -50,17 +54,18 @@ export default function WaterTracker() {
     updateDatabase(0, target);
   };
 
+  // 3. ADIM: Dizi içeriye alındı ve çeviri fonksiyonu (t) uygulandı
   const waterOptions = [
-    { amount: 250, label: '1 Bardak', glasses: 1 },
-    { amount: 500, label: '2 Bardak', glasses: 2 },
-    { amount: 750, label: '3 Bardak', glasses: 3 },
-    { amount: 1000, label: '1 Şişe', glasses: 0 }
+    { amount: 250, label: `1 ${t('glasses')}`, glasses: 1 },
+    { amount: 500, label: `2 ${t('glasses')}`, glasses: 2 },
+    { amount: 750, label: `3 ${t('glasses')}`, glasses: 3 },
+    { amount: 1000, label: `1 ${t('bottle')}`, glasses: 0 }
   ];
 
   return (
     <div className="p-6 md:p-10 space-y-10 pb-32 md:pb-10 max-w-3xl mx-auto animate-in fade-in duration-500 flex flex-col items-center">
       <div className="w-full text-center md:text-left">
-        <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight mb-1">Su Takibi</h1>
+        <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight mb-1">{t('waterTitle')}</h1>
       </div>
       <div className="relative w-64 h-64 md:w-80 md:h-80 rounded-full bg-white/40 backdrop-blur-xl border border-white/60 flex flex-col items-center justify-center overflow-hidden shadow-lg">
         <div className="relative z-10 flex flex-col items-center">
@@ -93,7 +98,7 @@ export default function WaterTracker() {
             </button>
           ))}
         </div>
-        <button onClick={resetWater} className="w-full mt-6 py-4 rounded-2xl bg-white/30 hover:bg-white/50 font-extrabold active:scale-95 transition-all border border-white/40 shadow-sm">Sıfırla</button>
+        <button onClick={resetWater} className="w-full mt-6 py-4 rounded-2xl bg-white/30 hover:bg-white/50 font-extrabold active:scale-95 transition-all border border-white/40 shadow-sm">{t('resetBtn')}</button>
       </div>
     </div>
   );

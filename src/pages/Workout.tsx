@@ -1,6 +1,7 @@
 import { useState, useEffect, useContext } from 'react';
 import { Plus, Check } from 'lucide-react';
 import { ThemeContext } from '../context/ThemeContext';
+import { useTranslation } from 'react-i18next'; // Çeviri kütüphanesi eklendi
 
 type WorkoutLog = {
   id?: number;
@@ -18,6 +19,9 @@ export default function Workout() {
   const [weight, setWeight] = useState('');
   const [reps, setReps] = useState('');
   const { themeBg, themePrimary } = useContext(ThemeContext);
+  
+  // Çeviri fonksiyonunu aktifleştiriyoruz
+  const { t } = useTranslation();
 
   const programs = ['Push', 'Pull', 'Leg'];
 
@@ -36,7 +40,7 @@ export default function Workout() {
   const handleSaveSet = () => {
     // 1. KONTROL: Alanlar boş mu?
     if (!exercise || !weight || !reps) {
-      alert("Kayıt yapılamadı: Lütfen Hareket Adı, Ağırlık ve Tekrar alanlarının hepsini doldur!");
+      alert(t('alertFillAll'));
       return;
     }
 
@@ -71,15 +75,15 @@ export default function Workout() {
     .catch(err => {
       console.error("Set kaydedilemedi:", err);
       // 3. KONTROL: En yaygın hata olan sunucu kapalı durumunda kullanıcıyı uyar.
-      alert("Kayıt başarısız! Lütfen Java (Spring Boot) arka plan uygulamasının çalıştığından emin ol.");
+      alert(t('alertServerError'));
     });
   };
 
   return (
     <div className="p-6 md:p-10 space-y-8 pb-32 md:pb-10 max-w-5xl mx-auto animate-in fade-in duration-500">
       <div>
-        <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight">Antrenman</h1>
-        <p className="font-medium opacity-80 mt-1">Bugünkü programını seç ve setlerini kaydet.</p>
+        <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight">{t('workoutTitle')}</h1>
+        <p className="font-medium opacity-80 mt-1">{t('workoutDesc')}</p>
       </div>
 
       <div className="flex gap-4 overflow-x-auto pb-2 no-scrollbar">
@@ -101,35 +105,34 @@ export default function Workout() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <div className="bg-white/40 backdrop-blur-xl rounded-[2rem] p-6 shadow-sm border border-white/60 space-y-4 h-fit w-full">
-          <h2 className="text-lg font-extrabold mb-4">Yeni Set Ekle</h2>
+          <h2 className="text-lg font-extrabold mb-4">{t('addNewSet')}</h2>
           
           <input 
             type="text" value={exercise} onChange={(e) => setExercise(e.target.value)}
-            placeholder="Hareket Adı (Örn: Bench Press)" 
+            placeholder={t('exerciseNamePlaceholder')} 
             className="w-full bg-white/60 border border-white/80 rounded-xl px-4 py-3 text-sm font-extrabold focus:outline-none transition-all placeholder-current opacity-70" 
           />
           
-          {/* GÖRSEL HATA BURADA ÇÖZÜLDÜ: grid-cols-2 yapısı ve min-w-0 eklendi */}
           <div className="grid grid-cols-2 gap-4 w-full">
             <input 
               type="number" value={weight} onChange={(e) => setWeight(e.target.value)}
-              placeholder="Ağırlık (kg)" 
+              placeholder={t('weightPlaceholder')} 
               className="w-full min-w-0 bg-white/60 border border-white/80 rounded-xl px-4 py-3 text-sm font-extrabold focus:outline-none transition-all placeholder-current opacity-70" 
             />
             <input 
               type="number" value={reps} onChange={(e) => setReps(e.target.value)}
-              placeholder="Tekrar" 
+              placeholder={t('repsPlaceholder')} 
               className="w-full min-w-0 bg-white/60 border border-white/80 rounded-xl px-4 py-3 text-sm font-extrabold focus:outline-none transition-all placeholder-current opacity-70" 
             />
           </div>
 
           <button onClick={handleSaveSet} className="w-full mt-2 py-3 rounded-xl bg-white/60 hover:bg-white border border-white/80 font-extrabold active:scale-95 transition-all flex items-center justify-center space-x-2 shadow-sm">
-            <Plus size={18} strokeWidth={3} /> <span>Seti Kaydet</span>
+            <Plus size={18} strokeWidth={3} /> <span>{t('saveSetBtn')}</span>
           </button>
         </div>
 
         <div className="bg-white/40 backdrop-blur-xl rounded-[2rem] p-6 shadow-sm border border-white/60 w-full overflow-hidden">
-          <h2 className="text-lg font-extrabold mb-4">Bugünkü {program} Kayıtların</h2>
+          <h2 className="text-lg font-extrabold mb-4">{t('todaysRecords', { program })}</h2>
           
           <div className="space-y-4">
             {logs.filter(log => log.programType === program).length > 0 ? (
@@ -139,9 +142,9 @@ export default function Workout() {
                   <div className="space-y-2">
                     {logs.filter(l => l.exerciseName === exName).map((setLog, idx) => (
                       <div key={idx} className="grid grid-cols-4 gap-2 items-center text-sm font-bold opacity-80 border-b border-white/20 pb-2 last:border-0 last:pb-0">
-                        <span className="text-left whitespace-nowrap">Set {setLog.setNumber}</span>
+                        <span className="text-left whitespace-nowrap">{t('sets')} {setLog.setNumber}</span>
                         <span className="text-center whitespace-nowrap">{setLog.weight} kg</span>
-                        <span className="text-center whitespace-nowrap">{setLog.reps} Tkr</span>
+                        <span className="text-center whitespace-nowrap">{setLog.reps} {t('repsShort')}</span>
                         <div className="flex justify-end">
                           <Check size={16} color={themePrimary} strokeWidth={3} />
                         </div>
@@ -151,7 +154,9 @@ export default function Workout() {
                 </div>
               ))
             ) : (
-              <p className="opacity-60 font-bold text-center py-10">Bugün henüz bu program için<br/>bir set girmedin.</p>
+              <p className="opacity-60 font-bold text-center py-10">
+                {t('noWorkoutDataLine1')}<br/>{t('noWorkoutDataLine2')}
+              </p>
             )}
           </div>
         </div>

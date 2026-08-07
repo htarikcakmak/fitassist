@@ -3,6 +3,7 @@ import { Plus, X, Search, ChevronLeft, Minus, Beef, Wheat, Droplet } from 'lucid
 import { ThemeContext } from '../context/ThemeContext';
 import { FOOD_LIBRARY } from '../data/foodLibrary';
 import type { FoodItem } from '../data/foodLibrary';
+import { useTranslation } from 'react-i18next'; // 1. Çeviri kütüphanesi eklendi
 
 type MealsState = { [key: string]: FoodItem[] };
 
@@ -11,13 +12,16 @@ export default function Nutrition() {
   const [modalData, setModalData] = useState<{ isOpen: boolean; mealType: string }>({ isOpen: false, mealType: '' });
   const [searchTerm, setSearchTerm] = useState('');
   
-  // YENİ STATE: Aktif makro filtresini tutar ('Protein', 'Karb', 'Yağ' veya null)
+  // Aktif makro filtresini tutar ('Protein', 'Karb', 'Yağ' veya null)
   const [activeMacroFilter, setActiveMacroFilter] = useState<string | null>(null);
   
   const [selectedFood, setSelectedFood] = useState<FoodItem | null>(null);
   const [quantity, setQuantity] = useState<number>(0);
 
   const { themeBg, themePrimary } = useContext(ThemeContext);
+  
+  // 2. Çeviri fonksiyonunu aktifleştiriyoruz
+  const { t } = useTranslation();
 
   useEffect(() => {
     fetch('http://localhost:8080/api/nutrition/today')
@@ -87,25 +91,22 @@ export default function Nutrition() {
   const closeModal = () => {
     setModalData({ isOpen: false, mealType: '' });
     setSearchTerm('');
-    setActiveMacroFilter(null); // Modalı kapatırken filtreyi sıfırla
+    setActiveMacroFilter(null);
     setSelectedFood(null);
   };
 
   const getDominantMacro = (food: FoodItem) => {
     const max = Math.max(food.p, food.c, food.f);
-    if (max === food.p) return { label: 'Yüksek Protein', color: 'bg-red-100 text-red-700' };
-    if (max === food.c) return { label: 'Yüksek Karb', color: 'bg-blue-100 text-blue-700' };
-    return { label: 'Yüksek Yağ', color: 'bg-yellow-100 text-yellow-700' };
+    if (max === food.p) return { label: t('highProtein', 'Yüksek Protein'), color: 'bg-red-100 text-red-700' };
+    if (max === food.c) return { label: t('highCarbs', 'Yüksek Karb'), color: 'bg-blue-100 text-blue-700' };
+    return { label: t('highFat', 'Yüksek Yağ'), color: 'bg-yellow-100 text-yellow-700' };
   };
 
-  // YENİ ALGORİTMA: Hem arama terimine göre hem de tıklanan makro butonuna göre listeyi filtreler
   const filteredFoods = FOOD_LIBRARY.filter(food => {
-    // 1. İsim eşleşmesi (Arama çubuğu)
     const matchesSearch = food.name.toLowerCase().includes(searchTerm.toLowerCase());
     if (!matchesSearch) return false;
 
-    // 2. Makro eşleşmesi (Eğer bir butona tıklandıysa)
-    if (!activeMacroFilter) return true; // Filtre yoksa hepsini göster
+    if (!activeMacroFilter) return true;
 
     const maxMacro = Math.max(food.p, food.c, food.f);
     if (activeMacroFilter === 'Protein' && maxMacro === food.p) return true;
@@ -118,8 +119,8 @@ export default function Nutrition() {
   return (
     <div className="p-6 md:p-10 space-y-6 pb-32 md:pb-10 max-w-5xl mx-auto animate-in fade-in duration-500">
       <div>
-        <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight mb-1">Beslenme</h1>
-        <p className="font-extrabold opacity-80">Hedefine ulaşmak için ana öğünlerini takip et.</p>
+        <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight mb-1">{t('nutritionTitle', 'Beslenme')}</h1>
+        <p className="font-extrabold opacity-80">{t('nutritionDesc', 'Hedefine ulaşmak için ana öğünlerini takip et.')}</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -128,7 +129,8 @@ export default function Nutrition() {
           return (
             <div key={mealName} className="bg-white/40 backdrop-blur-xl rounded-[2rem] p-6 shadow-sm border border-white/60">
               <div className="flex items-center justify-between mb-5">
-                <h3 className="text-lg font-extrabold">{mealName}</h3>
+                {/* Öğün ismi backend'den (Kahvaltı, vb.) geldiği için dinamik çeviri kullanılıyor */}
+                <h3 className="text-lg font-extrabold">{t(mealName, mealName)}</h3>
                 <span className="text-sm font-extrabold bg-white/60 px-3 py-1 rounded-lg" style={{ color: themePrimary }}>{mealCals} kcal</span>
               </div>
 
@@ -146,11 +148,11 @@ export default function Nutrition() {
                   ))}
                 </div>
               ) : (
-                <p className="text-sm mb-5 font-bold opacity-60">Henüz besin eklenmedi.</p>
+                <p className="text-sm mb-5 font-bold opacity-60">{t('noFoodAdded', 'Henüz besin eklenmedi.')}</p>
               )}
 
               <button onClick={() => setModalData({ isOpen: true, mealType: mealName })} className="w-full py-3 rounded-xl bg-white/60 hover:bg-white border border-white/80 font-extrabold active:scale-95 transition-all flex items-center justify-center space-x-2 shadow-sm">
-                <Plus size={18} strokeWidth={3} /> <span>Besin Ekle</span>
+                <Plus size={18} strokeWidth={3} /> <span>{t('addFoodBtn', 'Besin Ekle')}</span>
               </button>
             </div>
           );
@@ -168,7 +170,7 @@ export default function Nutrition() {
                   <button onClick={() => setSelectedFood(null)} className="p-2 bg-white/50 rounded-full active:scale-90 transition-all">
                     <ChevronLeft size={20} color={themePrimary} />
                   </button>
-                  <h2 className="text-2xl font-extrabold flex-1 text-center pr-10">Miktar Belirle</h2>
+                  <h2 className="text-2xl font-extrabold flex-1 text-center pr-10">{t('setAmount', 'Miktar Belirle')}</h2>
                 </div>
 
                 <div className="flex-1 flex flex-col items-center justify-center space-y-8">
@@ -197,21 +199,21 @@ export default function Nutrition() {
                           className="w-32 bg-white text-center text-4xl font-black border-2 rounded-2xl py-2 focus:outline-none"
                           style={{ borderColor: themePrimary }}
                         />
-                        <span className="text-2xl font-bold opacity-70">gram</span>
+                        <span className="text-2xl font-bold opacity-70">{t('gram', 'gram')}</span>
                       </div>
                     )}
                   </div>
 
                   <div className="flex justify-between w-full max-w-xs bg-white/40 p-4 rounded-2xl border border-white/60">
-                    <div className="text-center"><p className="text-xs font-bold opacity-70">Kalori</p><p className="font-black">{Math.round(selectedFood.cal * (quantity / selectedFood.baseAmount))} kcal</p></div>
-                    <div className="text-center"><p className="text-xs font-bold opacity-70">Protein</p><p className="font-black">{Number((selectedFood.p * (quantity / selectedFood.baseAmount)).toFixed(1))}g</p></div>
-                    <div className="text-center"><p className="text-xs font-bold opacity-70">Karb</p><p className="font-black">{Number((selectedFood.c * (quantity / selectedFood.baseAmount)).toFixed(1))}g</p></div>
-                    <div className="text-center"><p className="text-xs font-bold opacity-70">Yağ</p><p className="font-black">{Number((selectedFood.f * (quantity / selectedFood.baseAmount)).toFixed(1))}g</p></div>
+                    <div className="text-center"><p className="text-xs font-bold opacity-70">{t('calories', 'Kalori')}</p><p className="font-black">{Math.round(selectedFood.cal * (quantity / selectedFood.baseAmount))} kcal</p></div>
+                    <div className="text-center"><p className="text-xs font-bold opacity-70">{t('protein', 'Protein')}</p><p className="font-black">{Number((selectedFood.p * (quantity / selectedFood.baseAmount)).toFixed(1))}g</p></div>
+                    <div className="text-center"><p className="text-xs font-bold opacity-70">{t('carbs', 'Karb')}</p><p className="font-black">{Number((selectedFood.c * (quantity / selectedFood.baseAmount)).toFixed(1))}g</p></div>
+                    <div className="text-center"><p className="text-xs font-bold opacity-70">{t('fat', 'Yağ')}</p><p className="font-black">{Number((selectedFood.f * (quantity / selectedFood.baseAmount)).toFixed(1))}g</p></div>
                   </div>
                 </div>
 
                 <button onClick={confirmAndAddFood} className="w-full py-4 rounded-2xl bg-white/60 hover:bg-white border border-white/80 font-black text-lg active:scale-95 transition-all shadow-sm">
-                  Öğüne Ekle
+                  {t('addToMealBtn', 'Öğüne Ekle')}
                 </button>
               </div>
             ) : (
@@ -219,7 +221,7 @@ export default function Nutrition() {
               <>
                 <div className="flex flex-col p-6 border-b border-white/20 gap-4">
                   <div className="flex items-center justify-between">
-                    <h2 className="text-2xl font-extrabold">{modalData.mealType} - Besin Seç</h2>
+                    <h2 className="text-2xl font-extrabold">{t(modalData.mealType, modalData.mealType)} - {t('selectFood', 'Besin Seç')}</h2>
                     <button onClick={closeModal} className="p-2 bg-white/50 rounded-full active:scale-90 transition-all"><X size={20} color={themePrimary} /></button>
                   </div>
                   
@@ -232,31 +234,30 @@ export default function Nutrition() {
                       type="text" 
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
-                      placeholder="Besin ara... (Örn: Tavuk, Yulaf)" 
+                      placeholder={t('searchFoodPlaceholder', 'Besin ara... (Örn: Tavuk, Yulaf)')} 
                       className="w-full bg-white/60 border border-white/80 rounded-xl pl-11 pr-4 py-3 text-sm font-extrabold focus:outline-none transition-all placeholder-current opacity-80"
                     />
                   </div>
 
-                  {/* YENİ EKLENEN MAKRO FİLTRE BUTONLARI */}
-                  {/* YENİ EKLENEN MAKRO FİLTRE BUTONLARI */}
+                  {/* MAKRO FİLTRE BUTONLARI */}
                   <div className="flex gap-2 mt-1">
                     <button 
                       onClick={() => setActiveMacroFilter(activeMacroFilter === 'Protein' ? null : 'Protein')}
                       className={`flex-1 flex items-center justify-center gap-1 py-2 rounded-lg text-xs font-extrabold transition-all border ${activeMacroFilter === 'Protein' ? 'bg-red-500 text-white border-red-600 shadow-md' : 'bg-white/50 border-white/50 opacity-70 hover:opacity-100'}`}
                     >
-                      <Beef size={14} /> Protein
+                      <Beef size={14} /> {t('protein', 'Protein')}
                     </button>
                     <button 
                       onClick={() => setActiveMacroFilter(activeMacroFilter === 'Karb' ? null : 'Karb')}
                       className={`flex-1 flex items-center justify-center gap-1 py-2 rounded-lg text-[10px] sm:text-xs font-extrabold transition-all border ${activeMacroFilter === 'Karb' ? 'bg-blue-500 text-white border-blue-600 shadow-md' : 'bg-white/50 border-white/50 opacity-70 hover:opacity-100'}`}
                     >
-                      <Wheat size={14} /> Karbonhidrat
+                      <Wheat size={14} /> {t('carbsLong', 'Karbonhidrat')}
                     </button>
                     <button 
                       onClick={() => setActiveMacroFilter(activeMacroFilter === 'Yağ' ? null : 'Yağ')}
                       className={`flex-1 flex items-center justify-center gap-1 py-2 rounded-lg text-xs font-extrabold transition-all border ${activeMacroFilter === 'Yağ' ? 'bg-yellow-500 text-white border-yellow-600 shadow-md' : 'bg-white/50 border-white/50 opacity-70 hover:opacity-100'}`}
                     >
-                      <Droplet size={14} /> Yağ
+                      <Droplet size={14} /> {t('fat', 'Yağ')}
                     </button>
                   </div>
                 </div>
@@ -275,7 +276,7 @@ export default function Nutrition() {
                               </span>
                             </div>
                             <p className="text-xs font-bold opacity-70">
-                              {food.baseAmount} {food.unit} : {food.cal} kcal | P: {food.p}g | K: {food.c}g | Y: {food.f}g
+                              {food.baseAmount} {t(food.unit, food.unit)} : {food.cal} kcal | P: {food.p}g | K: {food.c}g | Y: {food.f}g
                             </p>
                           </div>
                           <div className="bg-white/50 p-2 rounded-full ml-2"><Plus size={20} strokeWidth={3} color={themePrimary} /></div>
@@ -284,7 +285,7 @@ export default function Nutrition() {
                     })
                   ) : (
                     <div className="text-center py-10 opacity-60 font-bold">
-                      Bu kritere uygun besin bulunamadı.
+                      {t('noFoodFound', 'Bu kritere uygun besin bulunamadı.')}
                     </div>
                   )}
                 </div>

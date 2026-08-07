@@ -2,6 +2,7 @@ import { useState, useEffect, useContext } from 'react';
 import { Plus, Moon, CalendarDays, ChevronDown, ChevronUp } from 'lucide-react';
 import { ThemeContext } from '../context/ThemeContext';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Cell } from 'recharts';
+import { useTranslation } from 'react-i18next'; // 1. Çeviri kütüphanesi eklendi
 
 type SleepLog = {
   id?: number;
@@ -10,7 +11,6 @@ type SleepLog = {
 };
 
 export default function Sleep() {
-  // 1. DÜZELTME: Demo veriler tamamen kaldırıldı. Başlangıçta liste boş.
   const [logs, setLogs] = useState<SleepLog[]>([]);
   
   const todayString = new Date().toISOString().split('T')[0];
@@ -21,6 +21,9 @@ export default function Sleep() {
   const [showDatePicker, setShowDatePicker] = useState(false);
   
   const { themeBg, themePrimary } = useContext(ThemeContext);
+  
+  // 2. Çeviri fonksiyonunu aktifleştiriyoruz
+  const { t } = useTranslation();
 
   useEffect(() => {
     fetch('http://localhost:8080/api/sleep/all')
@@ -33,7 +36,8 @@ export default function Sleep() {
 
   const handleSaveSleep = () => {
     if (!date || !hours) {
-      alert("Lütfen uyku süresini gir!");
+      // Çeviri uygulanmış Alert
+      alert(t('alertEnterSleepTime', 'Lütfen uyku süresini gir!'));
       return;
     }
 
@@ -67,28 +71,29 @@ export default function Sleep() {
     <div className="p-6 md:p-10 space-y-8 pb-32 md:pb-10 max-w-5xl mx-auto animate-in fade-in duration-500">
       <div>
         <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight flex items-center gap-3">
-          <Moon size={32} color={themePrimary} /> Uyku Takibi
+          <Moon size={32} color={themePrimary} /> {t('sleepTitle')}
         </h1>
-        <p className="font-medium opacity-80 mt-1">Yağ yakımı ve toparlanma için uyku düzenini analiz et.</p>
+        <p className="font-medium opacity-80 mt-1">{t('sleepDesc')}</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         
         <div className="lg:col-span-1 bg-white/40 backdrop-blur-xl rounded-[2rem] p-6 shadow-sm border border-white/60 flex flex-col h-fit">
-          <h2 className="text-lg font-extrabold mb-6">Uyku Kaydı Ekle</h2>
+          <h2 className="text-lg font-extrabold mb-6">{t('addSleepRecord')}</h2>
           
           <div className="space-y-6">
             
             <div>
-              <label className="text-sm font-extrabold opacity-80 ml-2 mb-2 block">Kaç saat uyudun?</label>
+              <label className="text-sm font-extrabold opacity-80 ml-2 mb-2 block">{t('howManyHours')}</label>
               <div className="relative">
-                {/* 2. DÜZELTME: Placeholder silindi ve yukarı/aşağı okları gizleyen CSS kodları eklendi */}
                 <input 
                   type="number" step="0.5" value={hours} onChange={(e) => setHours(e.target.value)}
                   className="w-full bg-white text-3xl font-black rounded-2xl px-6 py-4 focus:outline-none transition-all shadow-inner [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" 
                   style={{ color: themePrimary }}
                 />
-                <span className="absolute right-6 top-1/2 -translate-y-1/2 text-lg font-bold opacity-50 text-gray-500 pointer-events-none">Saat</span>
+                <span className="absolute right-6 top-1/2 -translate-y-1/2 text-lg font-bold opacity-50 text-gray-500 pointer-events-none">
+                  {t('hours')}
+                </span>
               </div>
             </div>
 
@@ -100,7 +105,9 @@ export default function Sleep() {
                 <div className="flex items-center gap-2">
                   <CalendarDays size={16} />
                   <span>
-                    {date === todayString ? "Tarih: Bugün" : `Tarih: ${new Date(date).toLocaleDateString('tr-TR')}`}
+                    {date === todayString 
+                      ? `${t('dateText', 'Tarih:')} ${t('todayText', 'Bugün')}` 
+                      : `${t('dateText', 'Tarih:')} ${new Date(date).toLocaleDateString('tr-TR')}`}
                   </span>
                 </div>
                 {showDatePicker ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
@@ -108,7 +115,9 @@ export default function Sleep() {
 
               {showDatePicker && (
                 <div className="mt-4 pt-4 border-t border-white/30 animate-in slide-in-from-top-2 duration-300">
-                  <label className="text-[10px] font-bold opacity-60 mb-1 block uppercase tracking-wider">Geçmiş bir gün mü gireceksin?</label>
+                  <label className="text-[10px] font-bold opacity-60 mb-1 block uppercase tracking-wider">
+                    {t('pastDay')}
+                  </label>
                   <input 
                     type="date" 
                     value={date} 
@@ -123,15 +132,14 @@ export default function Sleep() {
           </div>
 
           <button onClick={handleSaveSleep} className="w-full mt-6 py-4 rounded-2xl bg-white/60 hover:bg-white border border-white/80 font-black text-lg active:scale-95 transition-all flex items-center justify-center space-x-2 shadow-sm">
-            <Plus size={20} strokeWidth={3} /> <span>Kaydet</span>
+            <Plus size={20} strokeWidth={3} /> <span>{t('saveBtn')}</span>
           </button>
         </div>
 
         <div className="lg:col-span-2 bg-white/40 backdrop-blur-xl rounded-[2rem] p-6 shadow-sm border border-white/60 flex flex-col min-h-[400px]">
-          <h2 className="text-lg font-extrabold mb-6">Haftalık Uyku Analizi</h2>
+          <h2 className="text-lg font-extrabold mb-6">{t('weeklyAnalysis')}</h2>
           
           <div className="flex-1 w-full flex items-center justify-center">
-            {/* 3. DÜZELTME: Eğer hiç veri yoksa grafiğin yerinde boşluk yerine şık bir uyarı yazısı çıkar */}
             {logs.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={logs} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
@@ -160,14 +168,16 @@ export default function Sleep() {
                 </BarChart>
               </ResponsiveContainer>
             ) : (
-              <p className="text-sm font-bold opacity-50 text-center">Henüz uyku verisi girmedin.<br/>Yukarıdaki formdan ilk kaydını oluştur.</p>
+              <p className="text-sm font-bold opacity-50 text-center">
+                {t('noSleepDataLine1', 'Henüz uyku verisi girmedin.')}<br/>{t('noSleepDataLine2', 'Yukarıdaki formdan ilk kaydını oluştur.')}
+              </p>
             )}
           </div>
           
           <div className="flex justify-center gap-4 mt-6 text-xs font-bold opacity-70">
-            <div className="flex items-center gap-1"><div className="w-3 h-3 rounded-full bg-[#10b981]"></div> 7+ Saat (İdeal)</div>
-            <div className="flex items-center gap-1"><div className="w-3 h-3 rounded-full bg-[#f59e0b]"></div> 6-7 Saat (Ortalama)</div>
-            <div className="flex items-center gap-1"><div className="w-3 h-3 rounded-full bg-[#ef4444]"></div> &lt;6 Saat (Yetersiz)</div>
+            <div className="flex items-center gap-1"><div className="w-3 h-3 rounded-full bg-[#10b981]"></div> 7+ {t('hours')} ({t('ideal')})</div>
+            <div className="flex items-center gap-1"><div className="w-3 h-3 rounded-full bg-[#f59e0b]"></div> 6-7 {t('hours')} ({t('average')})</div>
+            <div className="flex items-center gap-1"><div className="w-3 h-3 rounded-full bg-[#ef4444]"></div> &lt;6 {t('hours')} ({t('insufficient')})</div>
           </div>
 
         </div>
