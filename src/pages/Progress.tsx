@@ -1,30 +1,35 @@
 import { useState, useEffect, useContext } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { ThemeContext } from '../context/ThemeContext';
+import { useTranslation } from 'react-i18next';
 
 export default function Progress() {
-  const metrics = ['Kilo', 'Yağ Oranı', 'Kas Oranı'];
-  const [activeMetric, setActiveMetric] = useState('Kilo');
+  // DÜZELTME 1: Ekrana basılacak kelimeleri değil, çeviri anahtarlarını state'te tutuyoruz.
+  const metrics = ['weight', 'bodyFat', 'muscleMass'];
+  const [activeMetric, setActiveMetric] = useState('weight');
   const [inputValue, setInputValue] = useState('');
   const [metricData, setMetricData] = useState<Record<string, {date: string, value: number}[]>>({});
+  
   const { themeBg, themePrimary } = useContext(ThemeContext);
+  const { t } = useTranslation();
 
   // 1. Veritabanından tüm gelişim kayıtlarını çek
   useEffect(() => {
     fetch('http://localhost:8080/api/progress/all')
       .then(res => res.json())
       .then((data: any[]) => {
+        // Anahtarları İngilizce isimleriyle güncelledik
         const formattedData: Record<string, {date: string, value: number}[]> = {
-          'Kilo': [], 'Yağ Oranı': [], 'Kas Oranı': []
+          'weight': [], 'bodyFat': [], 'muscleMass': []
         };
         
         data.forEach(item => {
           const d = new Date(item.date);
           const dateStr = d.getDate() + ' ' + d.toLocaleString('tr-TR', { month: 'short' });
           
-          if (item.weight) formattedData['Kilo'].push({ date: dateStr, value: item.weight });
-          if (item.bodyFatPercentage) formattedData['Yağ Oranı'].push({ date: dateStr, value: item.bodyFatPercentage });
-          if (item.muscleMass) formattedData['Kas Oranı'].push({ date: dateStr, value: item.muscleMass });
+          if (item.weight) formattedData['weight'].push({ date: dateStr, value: item.weight });
+          if (item.bodyFatPercentage) formattedData['bodyFat'].push({ date: dateStr, value: item.bodyFatPercentage });
+          if (item.muscleMass) formattedData['muscleMass'].push({ date: dateStr, value: item.muscleMass });
         });
         
         setMetricData(formattedData);
@@ -37,9 +42,10 @@ export default function Progress() {
     if (!inputValue) return;
     
     const payload: any = {};
-    if (activeMetric === 'Kilo') payload.weight = parseFloat(inputValue);
-    if (activeMetric === 'Yağ Oranı') payload.bodyFatPercentage = parseFloat(inputValue);
-    if (activeMetric === 'Kas Oranı') payload.muscleMass = parseFloat(inputValue);
+    // DÜZELTME 2: Dil ne olursa olsun arka plan mantığı bozulmadan çalışacak.
+    if (activeMetric === 'weight') payload.weight = parseFloat(inputValue);
+    if (activeMetric === 'bodyFat') payload.bodyFatPercentage = parseFloat(inputValue);
+    if (activeMetric === 'muscleMass') payload.muscleMass = parseFloat(inputValue);
 
     fetch('http://localhost:8080/api/progress/add', {
       method: 'POST',
@@ -66,8 +72,9 @@ export default function Progress() {
     <div className="p-6 md:p-10 space-y-8 pb-32 md:pb-10 max-w-5xl mx-auto animate-in fade-in duration-500">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight">Gelişim</h1>
-          <p className="font-medium opacity-80 mt-1">Ölçümlerini gir, grafiği oluştur.</p>
+          {/* Başlık ve açıklama çevirileri eklendi */}
+          <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight">{t('progressTitle')}</h1>
+          <p className="font-medium opacity-80 mt-1">{t('progressDesc')}</p>
         </div>
         <div className="flex overflow-x-auto gap-4 pb-2 no-scrollbar">
           {metrics.map((metric) => (
@@ -81,7 +88,8 @@ export default function Progress() {
               }}
               className="flex-shrink-0 px-6 py-3 rounded-xl text-sm font-extrabold transition-all duration-300 active:scale-95 border backdrop-blur-md"
             >
-              {metric}
+              {/* DÜZELTME 3: Buton metni burada dinamik olarak çevriliyor */}
+              {t(metric)}
             </button>
           ))}
         </div>
@@ -90,7 +98,8 @@ export default function Progress() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <div className="bg-white/40 backdrop-blur-xl rounded-[2rem] p-6 shadow-sm border border-white/60">
           <h2 className="text-lg font-extrabold mb-6 flex items-center justify-between">
-            <span>{activeMetric} Geçmişi</span>
+            {/* Geçmiş başlığı dinamik yapıldı (Örn: "Kilo Geçmişi" veya "Weight History") */}
+            <span>{t(activeMetric)} {t('history')}</span>
           </h2>
           <div className="h-64 w-full flex items-center justify-center">
             {currentData.length > 0 ? (
@@ -104,21 +113,30 @@ export default function Progress() {
                 </LineChart>
               </ResponsiveContainer>
             ) : (
-              <p className="opacity-60 font-bold text-center">Henüz veri yok.<br/>İlk ölçümünü aşağıdan ekle!</p>
+              // Veri yok ekranı çevirildi
+              <p className="opacity-60 font-bold text-center">
+                {t('noDataLine1')}<br/>{t('noDataLine2')}
+              </p>
             )}
           </div>
         </div>
 
-        <div className="bg-white/40 backdrop-blur-xl rounded-[2rem] p-6 shadow-sm border border-white/60 h-fit space-y-4">
-          <h3 className="font-extrabold">Yeni {activeMetric} Kaydı</h3>
-          <div className="flex gap-4">
+        <div className="bg-white/40 backdrop-blur-xl rounded-[2rem] p-6 shadow-sm border border-white/60">
+          <h2 className="text-lg font-extrabold mb-6">{t('newWeightRecord')}</h2>
+          <div className="flex flex-col sm:flex-row items-center gap-3 w-full">
             <input 
-              type="number" value={inputValue} onChange={(e) => setInputValue(e.target.value)}
-              placeholder="Değer girin..." 
-              className="flex-1 bg-white/60 border border-white/80 rounded-xl px-4 py-3 text-sm font-extrabold focus:outline-none transition-all placeholder-current opacity-70" 
+              type="number" 
+              placeholder={t('enterValue')} 
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
+              className="flex-1 w-full bg-white/60 border border-white/80 rounded-xl px-4 py-3 font-bold focus:outline-none focus:bg-white transition-all shadow-inner"
             />
-            <button onClick={handleSave} className="bg-white hover:bg-white/80 border border-white/60 px-6 py-3 rounded-xl active:scale-95 transition-all font-extrabold shadow-sm">
-              Kaydet
+            <button 
+              onClick={handleSave}
+              className="w-full sm:w-auto px-6 py-3 bg-white hover:bg-white/90 rounded-xl font-extrabold shadow-sm active:scale-95 transition-all"
+            >
+              {/* Kaydet butonu çevirildi */}
+              {t('saveBtn')}
             </button>
           </div>
         </div>

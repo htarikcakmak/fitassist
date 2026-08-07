@@ -1,8 +1,9 @@
 import { useState, useContext } from 'react';
 import { BrowserRouter, Routes, Route, NavLink, Outlet, useLocation } from 'react-router-dom';
-import { Home, Dumbbell, Utensils, Droplets, LineChart as LineChartIcon, Settings as SettingsIcon, Moon } from 'lucide-react';
+// Yeni menümüz için ChevronDown ikonunu ekledik
+import { Home, Dumbbell, Utensils, Droplets, LineChart as LineChartIcon, Settings as SettingsIcon, Moon, Globe, ChevronDown } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
-// Dış dosyaları içeri aktarıyoruz
 import { ThemeContext } from './context/ThemeContext';
 import Sleep from './pages/Sleep';
 import Dashboard from './pages/Dashboard';
@@ -12,9 +13,6 @@ import Nutrition from './pages/Nutrition';
 import WaterTracker from './pages/WaterTracker';
 import Settings from './pages/Settings';
 
-// ==========================================
-// ORTAK STİLLER VE DİNAMİK CSS DEĞİŞKENLERİ
-// ==========================================
 const GlobalStyles = () => {
   const { themeBg, themePrimary } = useContext(ThemeContext);
   
@@ -44,27 +42,77 @@ const GlobalStyles = () => {
   );
 };
 
-// ==========================================
-// 7. ANA ÇERÇEVE (LAYOUT) VE APP (PROVIDER)
-// ==========================================
 function Layout() {
   const location = useLocation();
   const currentPath = location.pathname;
   const { themeBg, themePrimary } = useContext(ThemeContext);
+  
+  const { t, i18n } = useTranslation();
+
+  // Kendi özel açılır menümüzün (dropdown) açık/kapalı durumunu takip eden değişken
+  const [isLangMenuOpen, setIsLangMenuOpen] = useState(false);
+
+  // Menüde göstereceğimiz dillerin listesi
+  const languages = [
+    { code: 'tr', label: 'Türkçe (TR)' },
+    { code: 'en', label: 'English (EN)' },
+    { code: 'es', label: 'Español (ES)' },
+    { code: 'fr', label: 'Français (FR)' },
+    { code: 'it', label: 'Italiano (IT)' },
+    { code: 'de', label: 'Deutsch (DE)' },
+  ];
 
   const navItems = [
-    { path: '/', icon: Home, label: 'Özet' },
-    { path: '/workout', icon: Dumbbell, label: 'Antrenman' },
-    { path: '/nutrition', icon: Utensils, label: 'Beslenme' },
-    { path: '/water', icon: Droplets, label: 'Su' },
-    { path: '/progress', icon: LineChartIcon, label: 'Gelişim' },
-    { path: '/sleep', icon: Moon, label: 'Uyku' },
-    { path: '/settings', icon: SettingsIcon, label: 'Ayarlar' },
+    { path: '/', icon: Home, label: t('Anasayfa') },
+    { path: '/workout', icon: Dumbbell, label: t('Antrenman') },
+    { path: '/nutrition', icon: Utensils, label: t('Beslenme') },
+    { path: '/water', icon: Droplets, label: t('Su') },
+    { path: '/progress', icon: LineChartIcon, label: t('Gelişim') },
+    { path: '/sleep', icon: Moon, label: t('Uyku') },
+    { path: '/settings', icon: SettingsIcon, label: t('Ayarlar') },
   ];
 
   return (
     <div className="fixed inset-0 flex font-sans" style={{ backgroundColor: themeBg }}>
       <GlobalStyles />
+      
+      {/* PROFESYONEL VE MODERN DİL SEÇİCİ */}
+      <div className="absolute top-6 right-6 z-50">
+        <button 
+          onClick={() => setIsLangMenuOpen(!isLangMenuOpen)}
+          className="flex items-center gap-2 bg-white/30 backdrop-blur-md px-4 py-3 rounded-2xl border border-white/40 shadow-sm transition-all hover:bg-white/40 active:scale-95"
+        >
+          <Globe size={18} color={themePrimary} />
+          <span className="font-extrabold text-sm uppercase" style={{ color: themePrimary }}>
+            {i18n.language}
+          </span>
+          <ChevronDown 
+            size={16} 
+            color={themePrimary} 
+            className={`transition-transform duration-300 ${isLangMenuOpen ? 'rotate-180' : ''}`} 
+          />
+        </button>
+
+        {/* Menü açıksa altındaki seçenekler kutusunu göster */}
+        {isLangMenuOpen && (
+          <div className="absolute top-full right-0 mt-3 w-40 bg-white/80 backdrop-blur-2xl rounded-2xl shadow-xl border border-white/50 overflow-hidden flex flex-col animate-in slide-in-from-top-2 fade-in duration-200">
+            {languages.map((lang) => (
+              <button
+                key={lang.code}
+                onClick={() => {
+                  i18n.changeLanguage(lang.code);
+                  setIsLangMenuOpen(false); // Dil seçilince menüyü kapat
+                }}
+                className={`px-4 py-3 text-left font-bold text-sm transition-colors hover:bg-black/5 ${
+                  i18n.language === lang.code ? 'text-black bg-white shadow-inner' : 'text-gray-600'
+                }`}
+              >
+                {lang.label}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
       
       <aside className="hidden md:flex flex-col w-64 lg:w-72 border-r border-white/30 bg-white/20 backdrop-blur-2xl p-6 shadow-[8px_0_30px_rgb(0,0,0,0.02)] z-10">
         <div className="mb-10 pl-2 mt-4">
@@ -110,9 +158,6 @@ function Layout() {
   );
 }
 
-// ==========================================
-// ANA UYGULAMA (APP) BİLEŞENİ
-// ==========================================
 export default function App() {
   const [themeBg, setThemeBg] = useState('#d8c97f');
   const [themePrimary, setThemePrimary] = useState('#6a9433');
