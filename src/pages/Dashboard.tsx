@@ -2,13 +2,13 @@ import { useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Dumbbell, Utensils, LineChart as LineChartIcon, Settings as SettingsIcon } from 'lucide-react';
 import { ThemeContext } from '../context/ThemeContext';
-import { useTranslation } from 'react-i18next'; // 1. Çeviri kütüphanesi eklendi
+import { useTranslation } from 'react-i18next'; 
 
 export default function Dashboard() {
   const navigate = useNavigate();
   const { themePrimary } = useContext(ThemeContext);
   
-  // 2. Çeviri fonksiyonunu aktifleştiriyoruz
+  // Çeviri fonksiyonunu aktifleştiriyoruz
   const { t } = useTranslation();
 
   return (

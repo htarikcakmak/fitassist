@@ -1,0 +1,15 @@
+{
+  "alertFillAll": "Please fill in all fields!",
+  "workoutTitle": "Workout",
+  "workoutDesc": "Track your exercises and sets.",
+  "addNewSet": "Add New Set",
+  "exerciseNamePlaceholder": "Exercise Name (e.g. Bench Press)",
+  "weightPlaceholder": "Weight (kg)",
+  "repsPlaceholder": "Reps",
+  "saveSetBtn": "Save Set",
+  "todaysRecords": "Today's {{program}} Records",
+  "sets": "Set",
+  "repsShort": "reps",
+  "noWorkoutDataLine1": "No sets entered for this program yet.",
+  "noWorkoutDataLine2": "Add your first set now!"
+}

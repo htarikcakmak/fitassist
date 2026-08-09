@@ -1,0 +1,15 @@
+{
+  "alertFillAll": "Bitte füllen Sie alle Felder aus!",
+  "workoutTitle": "Training",
+  "workoutDesc": "Verfolge deine Übungen und Sätze.",
+  "addNewSet": "Neuen Satz Hinzufügen",
+  "exerciseNamePlaceholder": "Übungsname (z.B. Bankdrücken)",
+  "weightPlaceholder": "Gewicht (kg)",
+  "repsPlaceholder": "Wiederholungen",
+  "saveSetBtn": "Satz Speichern",
+  "todaysRecords": "Heutige {{program}} Rekorde",
+  "sets": "Satz",
+  "repsShort": "Wdh",
+  "noWorkoutDataLine1": "Noch keine Sätze für dieses Programm eingegeben.",
+  "noWorkoutDataLine2": "Füge jetzt deinen ersten Satz hinzu!"
+}

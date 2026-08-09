@@ -2,6 +2,7 @@ import { useState, useEffect, useContext } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { ThemeContext } from '../context/ThemeContext';
 import { useTranslation } from 'react-i18next';
+import i18n from '../i18n';
 
 export default function Progress() {
   // DÜZELTME 1: Ekrana basılacak kelimeleri değil, çeviri anahtarlarını state'te tutuyoruz.
@@ -38,22 +39,40 @@ export default function Progress() {
   }, []);
 
   // 2. Yeni ölçümü veritabanına kaydet
+  // 2. Yeni ölçümü veritabanına kaydet
   const handleSave = () => {
     if (!inputValue) return;
     
     const payload: any = {};
-    // DÜZELTME 2: Dil ne olursa olsun arka plan mantığı bozulmadan çalışacak.
+    // Dil ne olursa olsun arka plan mantığı bozulmadan çalışacak.
     if (activeMetric === 'weight') payload.weight = parseFloat(inputValue);
     if (activeMetric === 'bodyFat') payload.bodyFatPercentage = parseFloat(inputValue);
     if (activeMetric === 'muscleMass') payload.muscleMass = parseFloat(inputValue);
 
     fetch('http://localhost:8080/api/progress/add', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 
+        'Content-Type': 'application/json',
+        // YENİ: Arka plana seçili dili gönderiyoruz
+        'Accept-Language': i18n.language || 'tr'
+      },
       body: JSON.stringify(payload)
     })
-    .then(res => res.json())
-    .then(savedItem => {
+    .then(async (res) => {
+      // YENİ: Hata durumlarını ve yeni paket yapısını JSON olarak okuyoruz
+      const responsePayload = await res.json();
+      
+      if (!res.ok) {
+        throw new Error(responsePayload.message || 'Sunucu hatası');
+      }
+      return responsePayload;
+    })
+    .then(responsePayload => {
+      // YENİ: Arka plandan gelen başarı mesajını ekranda gösteriyoruz
+      alert(responsePayload.message);
+
+      // YENİ: Veritabanına kaydedilen asıl veriyi 'responsePayload.data' içinden alıyoruz
+      const savedItem = responsePayload.data;
       const d = new Date(savedItem.date);
       const dateStr = d.getDate() + ' ' + d.toLocaleString('tr-TR', { month: 'short' });
       
@@ -63,7 +82,11 @@ export default function Progress() {
       }));
       setInputValue('');
     })
-    .catch(err => console.error("Kaydetme hatası:", err));
+    .catch(err => {
+      console.error("Kaydetme hatası:", err);
+      // Hata mesajını ekranda gösteriyoruz
+      alert(err.message);
+    });
   };
 
   const currentData = metricData[activeMetric] || [];

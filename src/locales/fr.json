@@ -1,0 +1,15 @@
+{
+  "alertFillAll": "Veuillez remplir tous les champs !",
+  "workoutTitle": "Entraînement",
+  "workoutDesc": "Suivez vos exercices et vos séries.",
+  "addNewSet": "Ajouter une Nouvelle Série",
+  "exerciseNamePlaceholder": "Nom de l'Exercice (ex: Développé Couché)",
+  "weightPlaceholder": "Poids (kg)",
+  "repsPlaceholder": "Répétitions",
+  "saveSetBtn": "Enregistrer la Série",
+  "todaysRecords": "Enregistrements {{program}} d'Aujourd'hui",
+  "sets": "Série",
+  "repsShort": "réps",
+  "noWorkoutDataLine1": "Aucune série saisie pour ce programme.",
+  "noWorkoutDataLine2": "Ajoutez votre première série maintenant !"
+}

@@ -3,7 +3,7 @@ import { Plus, X, Search, ChevronLeft, Minus, Beef, Wheat, Droplet } from 'lucid
 import { ThemeContext } from '../context/ThemeContext';
 import { FOOD_LIBRARY } from '../data/foodLibrary';
 import type { FoodItem } from '../data/foodLibrary';
-import { useTranslation } from 'react-i18next'; // 1. Çeviri kütüphanesi eklendi
+import { useTranslation } from 'react-i18next'; 
 
 type MealsState = { [key: string]: FoodItem[] };
 
@@ -12,7 +12,6 @@ export default function Nutrition() {
   const [modalData, setModalData] = useState<{ isOpen: boolean; mealType: string }>({ isOpen: false, mealType: '' });
   const [searchTerm, setSearchTerm] = useState('');
   
-  // Aktif makro filtresini tutar ('Protein', 'Karb', 'Yağ' veya null)
   const [activeMacroFilter, setActiveMacroFilter] = useState<string | null>(null);
   
   const [selectedFood, setSelectedFood] = useState<FoodItem | null>(null);
@@ -20,8 +19,8 @@ export default function Nutrition() {
 
   const { themeBg, themePrimary } = useContext(ThemeContext);
   
-  // 2. Çeviri fonksiyonunu aktifleştiriyoruz
-  const { t } = useTranslation();
+  // Çeviri fonksiyonu ve mevcut dili (i18n) dahil ediyoruz
+  const { t, i18n } = useTranslation();
 
   useEffect(() => {
     fetch('http://localhost:8080/api/nutrition/today')
@@ -77,15 +76,34 @@ export default function Nutrition() {
 
     fetch('http://localhost:8080/api/nutrition/add', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 
+        'Content-Type': 'application/json',
+        // YENİ: Kullanıcının seçtiği dili (tr, en, es vb.) arka plana gönderiyoruz
+        'Accept-Language': i18n.language || 'tr' 
+      },
       body: JSON.stringify(payload)
     })
-    .then(res => res.json())
-    .then(() => {
+    .then(async (res) => {
+      // YENİ: Backend hata dönerse (500) bunu da yakalayıp mesajını okuyoruz
+      const responsePayload = await res.json();
+      
+      if (!res.ok) {
+        throw new Error(responsePayload.message || 'Sunucu hatası');
+      }
+      return responsePayload;
+    })
+    .then((responsePayload) => {
+      // YENİ: Arka plandan gelen çok dilli başarı mesajını ekranda gösteriyoruz
+      alert(responsePayload.message);
+
       setMeals(prev => ({ ...prev, [modalData.mealType]: [...prev[modalData.mealType], calculatedFood] }));
       closeModal();
     })
-    .catch(err => console.error("Besin ekleme hatası:", err));
+    .catch(err => {
+      console.error("Besin ekleme hatası:", err);
+      // Hata mesajını ekranda gösteriyoruz
+      alert(err.message);
+    });
   };
 
   const closeModal = () => {
@@ -129,7 +147,6 @@ export default function Nutrition() {
           return (
             <div key={mealName} className="bg-white/40 backdrop-blur-xl rounded-[2rem] p-6 shadow-sm border border-white/60">
               <div className="flex items-center justify-between mb-5">
-                {/* Öğün ismi backend'den (Kahvaltı, vb.) geldiği için dinamik çeviri kullanılıyor */}
                 <h3 className="text-lg font-extrabold">{t(mealName, mealName)}</h3>
                 <span className="text-sm font-extrabold bg-white/60 px-3 py-1 rounded-lg" style={{ color: themePrimary }}>{mealCals} kcal</span>
               </div>
@@ -163,7 +180,6 @@ export default function Nutrition() {
         <div className="fixed inset-0 z-[100] flex flex-col justify-end bg-black/20 backdrop-blur-sm animate-in fade-in duration-300">
           <div className="rounded-t-[2.5rem] h-[90vh] flex flex-col shadow-2xl border-t border-white/50 animate-in slide-in-from-bottom-full duration-400 max-w-2xl mx-auto w-full" style={{ backgroundColor: themeBg }}>
             
-            {/* ADIM 2: MİKTAR BELİRLEME EKRANI */}
             {selectedFood ? (
               <div className="flex flex-col h-full p-6">
                 <div className="flex items-center mb-8 gap-4">
@@ -217,7 +233,6 @@ export default function Nutrition() {
                 </button>
               </div>
             ) : (
-              /* ADIM 1: ARAMA VE FİLTRELEME EKRANI */
               <>
                 <div className="flex flex-col p-6 border-b border-white/20 gap-4">
                   <div className="flex items-center justify-between">
@@ -225,7 +240,6 @@ export default function Nutrition() {
                     <button onClick={closeModal} className="p-2 bg-white/50 rounded-full active:scale-90 transition-all"><X size={20} color={themePrimary} /></button>
                   </div>
                   
-                  {/* Arama Çubuğu */}
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                       <Search size={18} color={themePrimary} className="opacity-70" />
@@ -239,7 +253,6 @@ export default function Nutrition() {
                     />
                   </div>
 
-                  {/* MAKRO FİLTRE BUTONLARI */}
                   <div className="flex gap-2 mt-1">
                     <button 
                       onClick={() => setActiveMacroFilter(activeMacroFilter === 'Protein' ? null : 'Protein')}

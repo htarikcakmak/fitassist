@@ -1,15 +1,15 @@
 import { useContext } from 'react';
 import { Palette } from 'lucide-react';
 import { ThemeContext } from '../context/ThemeContext';
-import { useTranslation } from 'react-i18next'; // 1. Çeviri kütüphanesi eklendi
+import { useTranslation } from 'react-i18next'; 
 
 export default function Settings() {
   const { themeBg, themePrimary, setTheme } = useContext(ThemeContext);
   
-  // 2. Çeviri fonksiyonunu aktifleştiriyoruz
+  // Çeviri fonksiyonunu aktifleştiriyoruz
   const { t } = useTranslation();
 
-  // 3. Palet isimleri dinamik çeviriye bağlandı
+  // Palet isimleri dinamik çeviriye bağlandı
   const palettes = [
     { name: t('paletteClassic', 'Krem / Yeşil (Klasik)'), bg: '#d8c97f', primary: '#6a9433' },
     { name: t('paletteNight', 'Siyah / Kırmızı (Gece)'), bg: '#1a1a1a', primary: '#e63946' },

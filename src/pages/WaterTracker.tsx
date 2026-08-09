@@ -1,7 +1,7 @@
 import { useState, useEffect, useContext } from 'react';
 import { Droplets, Plus, GlassWater, Check, Pencil } from 'lucide-react';
 import { ThemeContext } from '../context/ThemeContext';
-import { useTranslation } from 'react-i18next'; // Çeviri kütüphanesi eklendi
+import { useTranslation } from 'react-i18next'; 
 
 export default function WaterTracker() {
   const [water, setWater] = useState(0);
@@ -10,8 +10,8 @@ export default function WaterTracker() {
   const [tempTarget, setTempTarget] = useState('3000');
   const { themePrimary } = useContext(ThemeContext);
 
-  // Çeviri fonksiyonunu aktifleştiriyoruz
-  const { t } = useTranslation();
+  // Çeviri fonksiyonunu ve mevcut dili aktifleştiriyoruz
+  const { t, i18n } = useTranslation();
 
   // 1. ADIM: Sayfa yüklendiğinde Spring Boot'tan bugünün verisini çek
   useEffect(() => {
@@ -29,9 +29,31 @@ export default function WaterTracker() {
   const updateDatabase = (newWater: number, newTarget: number) => {
     fetch('http://localhost:8080/api/water/update', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 
+        'Content-Type': 'application/json',
+        // YENİ: Kullanıcının seçtiği dili arka plana gönderiyoruz
+        'Accept-Language': i18n.language || 'tr'
+      },
       body: JSON.stringify({ consumedAmount: newWater, targetAmount: newTarget })
-    }).catch(err => console.error("Veri kaydedilemedi:", err));
+    })
+    .then(async (res) => {
+      // YENİ: Hata durumlarını ve yeni paket yapısını JSON olarak okuyoruz
+      const responsePayload = await res.json();
+      
+      if (!res.ok) {
+        throw new Error(responsePayload.message || 'Sunucu hatası');
+      }
+      return responsePayload;
+    })
+    .then(responsePayload => {
+      // Başarı mesajını konsola yazdırıyoruz (Sürekli pop-up çıkıp rahatsız etmemesi için)
+      console.log(responsePayload.message);
+    })
+    .catch(err => {
+      console.error("Veri kaydedilemedi:", err);
+      // Hata mesajını ekranda gösteriyoruz
+      alert(err.message);
+    });
   };
 
   const addWater = (amount: number) => {
@@ -56,16 +78,16 @@ export default function WaterTracker() {
 
   // 3. ADIM: Dizi içeriye alındı ve çeviri fonksiyonu (t) uygulandı
   const waterOptions = [
-    { amount: 250, label: `1 ${t('glasses')}`, glasses: 1 },
-    { amount: 500, label: `2 ${t('glasses')}`, glasses: 2 },
-    { amount: 750, label: `3 ${t('glasses')}`, glasses: 3 },
-    { amount: 1000, label: `1 ${t('bottle')}`, glasses: 0 }
+    { amount: 250, label: `1 ${t('glasses', 'Bardak')}`, glasses: 1 },
+    { amount: 500, label: `2 ${t('glasses', 'Bardak')}`, glasses: 2 },
+    { amount: 750, label: `3 ${t('glasses', 'Bardak')}`, glasses: 3 },
+    { amount: 1000, label: `1 ${t('bottle', 'Şişe')}`, glasses: 0 }
   ];
 
   return (
     <div className="p-6 md:p-10 space-y-10 pb-32 md:pb-10 max-w-3xl mx-auto animate-in fade-in duration-500 flex flex-col items-center">
       <div className="w-full text-center md:text-left">
-        <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight mb-1">{t('waterTitle')}</h1>
+        <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight mb-1">{t('waterTitle', 'Su Takibi')}</h1>
       </div>
       <div className="relative w-64 h-64 md:w-80 md:h-80 rounded-full bg-white/40 backdrop-blur-xl border border-white/60 flex flex-col items-center justify-center overflow-hidden shadow-lg">
         <div className="relative z-10 flex flex-col items-center">
@@ -98,7 +120,7 @@ export default function WaterTracker() {
             </button>
           ))}
         </div>
-        <button onClick={resetWater} className="w-full mt-6 py-4 rounded-2xl bg-white/30 hover:bg-white/50 font-extrabold active:scale-95 transition-all border border-white/40 shadow-sm">{t('resetBtn')}</button>
+        <button onClick={resetWater} className="w-full mt-6 py-4 rounded-2xl bg-white/30 hover:bg-white/50 font-extrabold active:scale-95 transition-all border border-white/40 shadow-sm">{t('resetBtn', 'Sıfırla')}</button>
       </div>
     </div>
   );

@@ -1,0 +1,15 @@
+{
+	"alertFillAll": "Si prega di compilare tutti i campi!",
+	"workoutTitle": "Allenamento",
+	"workoutDesc": "Tieni traccia dei tuoi esercizi e delle serie.",
+	"addNewSet": "Aggiungi Nuova Serie",
+	"exerciseNamePlaceholder": "Nome Esercizio (es: Panca Piana)",
+	"weightPlaceholder": "Peso (kg)",
+	"repsPlaceholder": "Ripetizioni",
+	"saveSetBtn": "Salva Serie",
+	"todaysRecords": "Registri {{program}} di Oggi",
+	"sets": "Serie",
+	"repsShort": "rip",
+	"noWorkoutDataLine1": "Nessuna serie inserita per questo programma.",
+	"noWorkoutDataLine2": "Aggiungi la tua prima serie ora!"
+}

@@ -1,0 +1,15 @@
+{
+  "alertFillAll": "¡Por favor completa todos los campos!",
+  "workoutTitle": "Entrenamiento",
+  "workoutDesc": "Haz un seguimiento de tus ejercicios y series.",
+  "addNewSet": "Añadir Nueva Serie",
+  "exerciseNamePlaceholder": "Nombre del Ejercicio (Ej: Press de Banca)",
+  "weightPlaceholder": "Peso (kg)",
+  "repsPlaceholder": "Repeticiones",
+  "saveSetBtn": "Guardar Serie",
+  "todaysRecords": "Registros de {{program}} de Hoy",
+  "sets": "Serie",
+  "repsShort": "reps",
+  "noWorkoutDataLine1": "Aún no hay series para este programa.",
+  "noWorkoutDataLine2": "¡Añade tu primera serie ahora!"
+}
