@@ -2,6 +2,7 @@ import { useState, useEffect, useContext } from 'react';
 import { Plus, Check } from 'lucide-react';
 import { ThemeContext } from '../context/ThemeContext';
 import { useTranslation } from 'react-i18next';
+import i18n from '../i18n'; 
 
 type WorkoutLog = {
   id?: number;
@@ -10,6 +11,7 @@ type WorkoutLog = {
   setNumber: number;
   weight: number;
   reps: number;
+  date?: string; 
 };
 
 export default function Workout() {
@@ -20,50 +22,62 @@ export default function Workout() {
   const [reps, setReps] = useState('');
   const { themeBg, themePrimary } = useContext(ThemeContext);
   
-  // Çeviri fonksiyonunu ve mevcut dili aktifleştiriyoruz
-  const { t, i18n } = useTranslation();
-
+  const { t } = useTranslation();
   const programs = ['Push', 'Pull', 'Leg'];
 
-  // Sayfa açıldığında verileri çeker
+  // Bugünün saf (raw) tarihi (Örn: "2026-08-09")
+  const todayString = new Date().toISOString().split('T')[0];
+
   useEffect(() => {
     fetch('http://localhost:8080/api/workout/today')
       .then(res => {
         if (!res.ok) throw new Error("Bağlantı hatası");
         return res.json();
       })
-      .then(data => setLogs(data))
+      .then((data: any[]) => {
+        // YENİ DÜZELTME: Filtreyi katılaştırdık. Eski ve tarihsiz veriler kesinlikle reddedilecek.
+        const cleanedData = data.filter((log) => {
+          // Eğer verinin tarihi yoksa (eski test verisi) doğrudan gizle
+          if (!log.date) return false;
+          
+          // Eğer tarihi varsa, sadece formata uyan ve BUGÜNE ait olanları göster
+          const isValidFormat = /^\d{4}-\d{2}-\d{2}/.test(log.date);
+          const isToday = log.date.startsWith(todayString);
+          
+          return isValidFormat && isToday;
+        });
+        
+        setLogs(cleanedData);
+      })
       .catch(err => console.error("Antrenman verisi çekilemedi (Arka plan kapalı olabilir):", err));
   }, []);
 
-  // Seti veritabanına kaydeder
   const handleSaveSet = () => {
     if (!exercise || !weight || !reps) {
       alert(t('alertFillAll', 'Lütfen tüm alanları doldurun!'));
       return;
     }
 
-    const currentSets = logs.filter(log => log.exerciseName === exercise).length;
+    const currentSets = logs.filter(log => log.exerciseName === exercise && log.programType === program).length;
     
     const newLog = {
       programType: program,
       exerciseName: exercise,
       setNumber: currentSets + 1,
       weight: parseFloat(weight),
-      reps: parseInt(reps)
+      reps: parseInt(reps),
+      date: todayString 
     };
 
     fetch('http://localhost:8080/api/workout/add', {
       method: 'POST',
       headers: { 
         'Content-Type': 'application/json',
-        // YENİ: Arka plana seçili dili gönderiyoruz
         'Accept-Language': i18n.language || 'tr' 
       },
       body: JSON.stringify(newLog)
     })
     .then(async (res) => {
-      // YENİ: Hata durumlarını ve yeni paket yapısını JSON olarak okuyoruz
       const responsePayload = await res.json();
       
       if (!res.ok) {
@@ -72,19 +86,14 @@ export default function Workout() {
       return responsePayload;
     })
     .then(responsePayload => {
-      // Arka plandan gelen başarı mesajını ekranda gösteriyoruz
       alert(responsePayload.message);
 
-      // Veritabanına kaydedilen asıl veriyi listeye ekliyoruz
-      setLogs([...logs, responsePayload.data]);
-      
-      // Pratiklik için hareket adı (exercise) silinmez, sadece ağırlık ve tekrar sıfırlanır
+      setLogs([...logs, newLog]);
       setWeight('');
       setReps('');
     })
     .catch(err => {
       console.error("Set kaydedilemedi:", err);
-      // Hata mesajını ekranda gösteriyoruz
       alert(err.message);
     });
   };
@@ -150,7 +159,7 @@ export default function Workout() {
                 <div key={exName} className="bg-white/60 border border-white/80 p-4 rounded-xl shadow-sm w-full">
                   <h3 className="font-extrabold border-b border-white/50 pb-2 mb-3">{exName}</h3>
                   <div className="space-y-2">
-                    {logs.filter(l => l.exerciseName === exName).map((setLog, idx) => (
+                    {logs.filter(l => l.exerciseName === exName && l.programType === program).map((setLog, idx) => (
                       <div key={idx} className="grid grid-cols-4 gap-2 items-center text-sm font-bold opacity-80 border-b border-white/20 pb-2 last:border-0 last:pb-0">
                         <span className="text-left whitespace-nowrap">{t('sets', 'Set')} {setLog.setNumber}</span>
                         <span className="text-center whitespace-nowrap">{setLog.weight} kg</span>

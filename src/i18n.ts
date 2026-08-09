@@ -15,7 +15,7 @@ const resources = {
       saveBtn: "Kaydet",
       cancelBtn: "İptal",
       addBtn: "Ekle",
-
+      
       // 2. UYKU SAYFASI
       sleepTitle: "Uyku Takibi",
       sleepDesc: "Yağ yakımı ve toparlanma için uyku düzenini analiz et.",
@@ -24,7 +24,6 @@ const resources = {
       hours: "Saat",
       pastDay: "Geçmiş bir gün mü gireceksin?",
       weeklyAnalysis: "Haftalık Uyku Analizi",
-      noData: "Henüz veri girmedin. İlk kaydını oluştur.",
       ideal: "İdeal",
       average: "Ortalama",
       insufficient: "Yetersiz",
@@ -116,13 +115,19 @@ const resources = {
       bgColor: "Arka Plan Rengi",
       primaryColor: "Vurgu Rengi (Yazılar)",
 
-      // 8. DASHBOARD (ANASAYFA) - YENİ EKLENEN KISIM
-      dashboardWorkoutTitle: "Antrenman Takibi",
-      dashboardWorkoutDesc: "Hareketlerini ve setlerini yönet",
-      dashboardNutrition: "Beslenme",
-      dashboardWater: "Su",
-      dashboardProgress: "Gelişim",
-      dashboardReport: "Raporu"
+      // 8. DASHBOARD (ANASAYFA WIDGETLARI)
+      welcomeGreeting: "Merhaba! 👋",
+      dashboardNutritionTitle: "Beslenme Özetin",
+      consumed: "alındı",
+      dashboardWaterTitle: "Su Tüketimi",
+      dashboardWorkoutTitle: "Günün İdmanı",
+      setsCompleted: "Set Yapıldı",
+      noWorkoutYet: "Henüz Yok",
+      dashboardSleepTitle: "Son Uyku",
+      hoursShort: "saat",
+      noData: "Veri Yok",
+      dashboardProgressTitle: "Gelişim",
+      dashboardProgressDesc: "İstatistiklerini gör",
     }
   },
   en: {
@@ -145,7 +150,6 @@ const resources = {
       hours: "Hours",
       pastDay: "Are you entering a past date?",
       weeklyAnalysis: "Weekly Sleep Analysis",
-      noData: "No data yet. Create your first record.",
       ideal: "Ideal",
       average: "Average",
       insufficient: "Insufficient",
@@ -217,7 +221,6 @@ const resources = {
       addWater: "Add Water",
       resetBtn: "Reset",
 
-      settingsTitle: "General Settings",
       language: "Language",
       theme: "Theme",
       profile: "Profile",
@@ -231,14 +234,21 @@ const resources = {
       customColor: "Choose Custom Color",
       bgColor: "Background Color",
       primaryColor: "Primary Color (Text)",
+      settingsTitle: "General Settings",
 
-      // 8. DASHBOARD (ANASAYFA) - YENİ EKLENEN KISIM
-      dashboardWorkoutTitle: "Workout Tracking",
-      dashboardWorkoutDesc: "Manage your exercises and sets",
-      dashboardNutrition: "Nutrition",
-      dashboardWater: "Water",
-      dashboardProgress: "Progress",
-      dashboardReport: "Report"
+      // 8. DASHBOARD (ANASAYFA WIDGETLARI)
+      welcomeGreeting: "Hello! 👋",
+      dashboardNutritionTitle: "Nutrition Summary",
+      consumed: "consumed",
+      dashboardWaterTitle: "Water Intake",
+      dashboardWorkoutTitle: "Today's Workout",
+      setsCompleted: "Sets Done",
+      noWorkoutYet: "Not Yet",
+      dashboardSleepTitle: "Last Sleep",
+      hoursShort: "hrs",
+      noData: "No Data",
+      dashboardProgressTitle: "Progress",
+      dashboardProgressDesc: "View your stats",
     }
   },
   es: {
@@ -261,7 +271,6 @@ const resources = {
       hours: "Horas",
       pastDay: "¿Vas a introducir una fecha pasada?",
       weeklyAnalysis: "Análisis Semanal",
-      noData: "Aún no hay datos. Crea tu primer registro.",
       ideal: "Ideal",
       average: "Promedio",
       insufficient: "Insuficiente",
@@ -280,7 +289,7 @@ const resources = {
       progressDesc: "Introduce tus medidas, genera el gráfico.",
       weight: "Peso",
       bodyFat: "Grasa Corporal",
-      muscleMass: "Masa Muscular",
+      muscleMass: "Masa Muscolare",
       history: "Historial",
       noDataLine1: "Aún no hay datos.",
       noDataLine2: "¡Añade tu primera medida abajo!",
@@ -348,13 +357,19 @@ const resources = {
       bgColor: "Color de Fondo",
       primaryColor: "Color Principal (Texto)",
 
-      // 8. DASHBOARD (ANASAYFA) - YENİ EKLENEN KISIM
-      dashboardWorkoutTitle: "Seguimiento de Entrenamiento",
-      dashboardWorkoutDesc: "Gestiona tus ejercicios y series",
-      dashboardNutrition: "Nutrición",
-      dashboardWater: "Agua",
-      dashboardProgress: "Progreso",
-      dashboardReport: "Reporte"
+      // 8. DASHBOARD (ANASAYFA WIDGETLARI)
+      welcomeGreeting: "¡Hola! 👋",
+      dashboardNutritionTitle: "Resumen Nutricional",
+      consumed: "consumido",
+      dashboardWaterTitle: "Consumo de Agua",
+      dashboardWorkoutTitle: "Entrenamiento Hoy",
+      setsCompleted: "Series Hechas",
+      noWorkoutYet: "Aún no",
+      dashboardSleepTitle: "Último Sueño",
+      hoursShort: "hrs",
+      noData: "Sin Datos",
+      dashboardProgressTitle: "Progreso",
+      dashboardProgressDesc: "Ver estadísticas",
     }
   },
   fr: {
@@ -377,7 +392,6 @@ const resources = {
       hours: "Heures",
       pastDay: "Saisissez-vous une date passée ?",
       weeklyAnalysis: "Analyse Hebdomadaire",
-      noData: "Pas encore de données. Créez votre premier enregistrement.",
       ideal: "Idéal",
       average: "Moyen",
       insufficient: "Insuffisant",
@@ -464,13 +478,19 @@ const resources = {
       bgColor: "Couleur de Fond",
       primaryColor: "Couleur Principale (Texte)",
 
-      // 8. DASHBOARD (ANASAYFA) - YENİ EKLENEN KISIM
-      dashboardWorkoutTitle: "Suivi d'Entraînement",
-      dashboardWorkoutDesc: "Gérez vos exercices et séries",
-      dashboardNutrition: "Nutrition",
-      dashboardWater: "Eau",
-      dashboardProgress: "Progrès",
-      dashboardReport: "Rapport"
+      // 8. DASHBOARD (ANASAYFA WIDGETLARI)
+      welcomeGreeting: "Bonjour! 👋",
+      dashboardNutritionTitle: "Résumé Nutritionnel",
+      consumed: "consommé",
+      dashboardWaterTitle: "Consommation d'eau",
+      dashboardWorkoutTitle: "Entraînement du Jour",
+      setsCompleted: "Séries Faites",
+      noWorkoutYet: "Pas Encore",
+      dashboardSleepTitle: "Dernier Sommeil",
+      hoursShort: "h",
+      noData: "Pas de données",
+      dashboardProgressTitle: "Progrès",
+      dashboardProgressDesc: "Voir vos stats",
     }
   },
   it: {
@@ -493,7 +513,6 @@ const resources = {
       hours: "Ore",
       pastDay: "Stai inserendo una data passata?",
       weeklyAnalysis: "Analisi Settimanale",
-      noData: "Nessun dato ancora. Crea il tuo primo registro.",
       ideal: "Ideale",
       average: "Media",
       insufficient: "Insufficiente",
@@ -580,13 +599,19 @@ const resources = {
       bgColor: "Colore di Sfondo",
       primaryColor: "Colore Principale (Testo)",
 
-      // 8. DASHBOARD (ANASAYFA) - YENİ EKLENEN KISIM
-      dashboardWorkoutTitle: "Monitoraggio Allenamento",
-      dashboardWorkoutDesc: "Gestisci i tuoi esercizi e le serie",
-      dashboardNutrition: "Nutrizione",
-      dashboardWater: "Acqua",
-      dashboardProgress: "Progresso",
-      dashboardReport: "Rapporto"
+      // 8. DASHBOARD (ANASAYFA WIDGETLARI)
+      welcomeGreeting: "Ciao! 👋",
+      dashboardNutritionTitle: "Riepilogo Nutrizionale",
+      consumed: "consumato",
+      dashboardWaterTitle: "Consumo di Acqua",
+      dashboardWorkoutTitle: "Allenamento Oggi",
+      setsCompleted: "Serie Fatte",
+      noWorkoutYet: "Non Ancora",
+      dashboardSleepTitle: "Ultimo Sonno",
+      hoursShort: "ore",
+      noData: "Nessun Dato",
+      dashboardProgressTitle: "Progresso",
+      dashboardProgressDesc: "Vedi le tue stat",
     }
   },
   de: {
@@ -609,7 +634,6 @@ const resources = {
       hours: "Stunden",
       pastDay: "Gibst du ein vergangenes Datum ein?",
       weeklyAnalysis: "Wöchentliche Schlafanalyse",
-      noData: "Noch keine Daten. Erstelle deinen ersten Eintrag.",
       ideal: "Ideal",
       average: "Durchschnitt",
       insufficient: "Unzureichend",
@@ -696,13 +720,19 @@ const resources = {
       bgColor: "Hintergrundfarbe",
       primaryColor: "Primärfarbe (Text)",
 
-      // 8. DASHBOARD (ANASAYFA) - YENİ EKLENEN KISIM
-      dashboardWorkoutTitle: "Trainingsverfolgung",
-      dashboardWorkoutDesc: "Verwalte deine Übungen und Sätze",
-      dashboardNutrition: "Ernährung",
-      dashboardWater: "Wasser",
-      dashboardProgress: "Fortschritt",
-      dashboardReport: "Bericht"
+      // 8. DASHBOARD (ANASAYFA WIDGETLARI)
+      welcomeGreeting: "Hallo! 👋",
+      dashboardNutritionTitle: "Ernährung Zusammenfassung",
+      consumed: "konsumiert",
+      dashboardWaterTitle: "Wasseraufnahme",
+      dashboardWorkoutTitle: "Heutiges Training",
+      setsCompleted: "Sätze Erledigt",
+      noWorkoutYet: "Noch Nicht",
+      dashboardSleepTitle: "Letzter Schlaf",
+      hoursShort: "Std.",
+      noData: "Keine Daten",
+      dashboardProgressTitle: "Fortschritt",
+      dashboardProgressDesc: "Zeige deine Stats",
     }
   }
 };

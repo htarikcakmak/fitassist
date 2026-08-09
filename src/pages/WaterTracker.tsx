@@ -18,9 +18,20 @@ export default function WaterTracker() {
     fetch('http://localhost:8080/api/water/today')
       .then(res => res.json())
       .then(data => {
-        setWater(data.consumedAmount);
-        setTarget(data.targetAmount);
-        setTempTarget(data.targetAmount.toString());
+        // YENİ: Eski verileri engellemek için tarih kontrolü (Bugünün tarihini alıyoruz)
+        const todayString = new Date().toISOString().split('T')[0];
+        
+        // Eğer gelen veride tarih varsa ve bu tarih BUGÜN değilse (eski veriyse), değerleri sıfır kabul et
+        if (data.date && !data.date.startsWith(todayString)) {
+          setWater(0);
+          setTarget(3000);
+          setTempTarget('3000');
+        } else {
+          // Veri bugüne aitse normal şekilde ekrana yansıt
+          setWater(data.consumedAmount || 0);
+          setTarget(data.targetAmount || 3000);
+          setTempTarget((data.targetAmount || 3000).toString());
+        }
       })
       .catch(err => console.error("Veritabanına bağlanılamadı:", err));
   }, []);
@@ -31,13 +42,11 @@ export default function WaterTracker() {
       method: 'POST',
       headers: { 
         'Content-Type': 'application/json',
-        // YENİ: Kullanıcının seçtiği dili arka plana gönderiyoruz
         'Accept-Language': i18n.language || 'tr'
       },
       body: JSON.stringify({ consumedAmount: newWater, targetAmount: newTarget })
     })
     .then(async (res) => {
-      // YENİ: Hata durumlarını ve yeni paket yapısını JSON olarak okuyoruz
       const responsePayload = await res.json();
       
       if (!res.ok) {
@@ -46,12 +55,10 @@ export default function WaterTracker() {
       return responsePayload;
     })
     .then(responsePayload => {
-      // Başarı mesajını konsola yazdırıyoruz (Sürekli pop-up çıkıp rahatsız etmemesi için)
       console.log(responsePayload.message);
     })
     .catch(err => {
       console.error("Veri kaydedilemedi:", err);
-      // Hata mesajını ekranda gösteriyoruz
       alert(err.message);
     });
   };

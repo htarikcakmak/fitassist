@@ -1,6 +1,5 @@
 import { useState, useContext } from 'react';
 import { BrowserRouter, Routes, Route, NavLink, Outlet, useLocation } from 'react-router-dom';
-// Yeni menümüz için ChevronDown ikonunu ekledik
 import { Home, Dumbbell, Utensils, Droplets, LineChart as LineChartIcon, Settings as SettingsIcon, Moon, Globe, ChevronDown } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
@@ -49,10 +48,8 @@ function Layout() {
   
   const { t, i18n } = useTranslation();
 
-  // Kendi özel açılır menümüzün (dropdown) açık/kapalı durumunu takip eden değişken
   const [isLangMenuOpen, setIsLangMenuOpen] = useState(false);
 
-  // Menüde göstereceğimiz dillerin listesi
   const languages = [
     { code: 'tr', label: 'Türkçe (TR)' },
     { code: 'en', label: 'English (EN)' },
@@ -80,7 +77,7 @@ function Layout() {
       <div className="absolute top-6 right-6 z-50">
         <button 
           onClick={() => setIsLangMenuOpen(!isLangMenuOpen)}
-          className="flex items-center gap-2 bg-white/30 backdrop-blur-md px-4 py-3 rounded-2xl border border-white/40 shadow-sm transition-all hover:bg-white/40 active:scale-95"
+          className="flex items-center gap-2 bg-white/30 backdrop-blur-md px-4 py-3 rounded-2xl border border-white/40 shadow-sm transition-all duration-300 hover:bg-white/40 active:scale-95"
         >
           <Globe size={18} color={themePrimary} />
           <span className="font-extrabold text-sm uppercase" style={{ color: themePrimary }}>
@@ -93,7 +90,6 @@ function Layout() {
           />
         </button>
 
-        {/* Menü açıksa altındaki seçenekler kutusunu göster */}
         {isLangMenuOpen && (
           <div className="absolute top-full right-0 mt-3 w-40 bg-white/80 backdrop-blur-2xl rounded-2xl shadow-xl border border-white/50 overflow-hidden flex flex-col animate-in slide-in-from-top-2 fade-in duration-200">
             {languages.map((lang) => (
@@ -101,7 +97,7 @@ function Layout() {
                 key={lang.code}
                 onClick={() => {
                   i18n.changeLanguage(lang.code);
-                  setIsLangMenuOpen(false); // Dil seçilince menüyü kapat
+                  setIsLangMenuOpen(false);
                 }}
                 className={`px-4 py-3 text-left font-bold text-sm transition-colors hover:bg-black/5 ${
                   i18n.language === lang.code ? 'text-black bg-white shadow-inner' : 'text-gray-600'
@@ -114,6 +110,7 @@ function Layout() {
         )}
       </div>
       
+      {/* MASAÜSTÜ YAN MENÜ */}
       <aside className="hidden md:flex flex-col w-64 lg:w-72 border-r border-white/30 bg-white/20 backdrop-blur-2xl p-6 shadow-[8px_0_30px_rgb(0,0,0,0.02)] z-10">
         <div className="mb-10 pl-2 mt-4">
           <h1 className="text-3xl font-black tracking-tighter">FIT<span className="opacity-70">ASSIST</span></h1>
@@ -134,20 +131,37 @@ function Layout() {
         </nav>
       </aside>
 
-      <main className="flex-1 flex flex-col overflow-hidden bg-transparent">
-        <div className="flex-1 overflow-y-auto w-full no-scrollbar">
+      {/* ANA İÇERİK ALANI */}
+      <main className="flex-1 flex flex-col overflow-hidden bg-transparent relative">
+        
+        {/* YENİ: MOBİL İÇİN ÜST BAŞLIK (FitAssist) */}
+        <div className="md:hidden flex items-center justify-between pt-8 px-6 pb-2 z-10 shrink-0">
+          <h1 className="text-3xl font-black tracking-tighter">FIT<span className="opacity-70">ASSIST</span></h1>
+        </div>
+
+        {/* YENİ: YUMUŞAK SAYFA GEÇİŞ EFEKTİ (key=location.pathname sayesinde her geçişte tetiklenir) */}
+        <div key={location.pathname} className="flex-1 overflow-y-auto w-full no-scrollbar pb-28 animate-in fade-in slide-in-from-bottom-4 duration-500 ease-out">
           <Outlet />
         </div>
         
-        <nav className="md:hidden absolute bottom-0 w-full bg-white/30 backdrop-blur-2xl border-t border-white/40 pb-safe z-40 shadow-[0_-8px_30px_rgba(0,0,0,0.1)]">
-          <div className="flex justify-between items-center px-4 py-2">
+        {/* YENİ: YÜZEN, YUMUŞAK GEÇİŞLİ PREMIUM ALT MENÜ */}
+        <nav className="md:hidden absolute bottom-4 left-4 right-4 bg-white/60 backdrop-blur-3xl border border-white/60 rounded-[2rem] z-40 shadow-[0_10px_40px_rgba(0,0,0,0.1)]">
+          <div className="flex justify-between items-center px-2 py-2">
             {navItems.map((item) => {
               const Icon = item.icon;
               const isActive = currentPath === item.path || (item.path !== '/' && currentPath.startsWith(item.path));
               return (
-                <NavLink key={item.path} to={item.path} className={`flex flex-col items-center p-2 rounded-2xl transition-all duration-300 ${isActive ? 'scale-110 bg-white shadow-sm border border-white/80' : 'opacity-70 active:scale-95'}`}>
-                  <Icon size={24} strokeWidth={isActive ? 2.5 : 2} color={themePrimary} />
-                  {isActive && <span className="text-[10px] mt-1 font-extrabold tracking-wide" style={{ color: themePrimary }}>{item.label}</span>}
+                <NavLink 
+                  key={item.path} 
+                  to={item.path} 
+                  className={`relative flex items-center justify-center rounded-2xl transition-all duration-500 ease-out overflow-hidden ${isActive ? 'bg-white shadow-sm border border-white/80 p-2.5 px-4' : 'p-2.5 opacity-50 hover:opacity-100 active:scale-90'}`}
+                >
+                  <Icon size={22} strokeWidth={isActive ? 2.5 : 2} color={themePrimary} className={`transition-transform duration-500 ${isActive ? 'scale-110' : ''}`} />
+                  
+                  {/* Animasyonlu Metin Genişleme Efekti (Accordion tarzı) */}
+                  <div className={`transition-all duration-500 ease-out flex items-center ${isActive ? 'max-w-[80px] ml-1.5 opacity-100' : 'max-w-0 opacity-0 ml-0'}`}>
+                    <span className="text-[10px] font-extrabold tracking-wide whitespace-nowrap" style={{ color: themePrimary }}>{item.label}</span>
+                  </div>
                 </NavLink>
               );
             })}

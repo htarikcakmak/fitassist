@@ -27,7 +27,16 @@ export default function Nutrition() {
       .then(res => res.json())
       .then(data => {
         const loadedMeals: MealsState = { 'Kahvaltı': [], 'Öğle': [], 'Akşam': [] };
-        data.forEach((item: any) => {
+        
+        // YENİ: Sadece formata uyan (veya tarih bilgisi olmayan) temiz verileri filtreliyoruz
+        const cleanedData = data.filter((item: any) => {
+          if (item.date) {
+            return /^\d{4}-\d{2}-\d{2}/.test(item.date);
+          }
+          return true; // Tarih alanı yoksa veriyi kabul et
+        });
+
+        cleanedData.forEach((item: any) => {
           if (loadedMeals[item.mealName]) {
             loadedMeals[item.mealName].push({
               id: item.id?.toString() || Math.random().toString(),
@@ -78,13 +87,11 @@ export default function Nutrition() {
       method: 'POST',
       headers: { 
         'Content-Type': 'application/json',
-        // YENİ: Kullanıcının seçtiği dili (tr, en, es vb.) arka plana gönderiyoruz
         'Accept-Language': i18n.language || 'tr' 
       },
       body: JSON.stringify(payload)
     })
     .then(async (res) => {
-      // YENİ: Backend hata dönerse (500) bunu da yakalayıp mesajını okuyoruz
       const responsePayload = await res.json();
       
       if (!res.ok) {
@@ -93,7 +100,6 @@ export default function Nutrition() {
       return responsePayload;
     })
     .then((responsePayload) => {
-      // YENİ: Arka plandan gelen çok dilli başarı mesajını ekranda gösteriyoruz
       alert(responsePayload.message);
 
       setMeals(prev => ({ ...prev, [modalData.mealType]: [...prev[modalData.mealType], calculatedFood] }));
@@ -101,7 +107,6 @@ export default function Nutrition() {
     })
     .catch(err => {
       console.error("Besin ekleme hatası:", err);
-      // Hata mesajını ekranda gösteriyoruz
       alert(err.message);
     });
   };

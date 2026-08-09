@@ -29,7 +29,18 @@ export default function Sleep() {
     fetch('http://localhost:8080/api/sleep/all')
       .then(res => res.json())
       .then(data => {
-        if(data && data.length > 0) setLogs(data);
+        if(data && data.length > 0) {
+          
+          // YENİ: Eski ve bozuk tarihleri gizlemek için filtreleme yapıyoruz
+          const cleanedData = data.filter((log: SleepLog) => {
+            // Sadece YYYY-MM-DD formatında olan standart tarihleri grafiğe kabul et
+            // Regex açıklaması: 4 rakam, tire, 2 rakam, tire, 2 rakam
+            const isValidDate = /^\d{4}-\d{2}-\d{2}$/.test(log.date);
+            return isValidDate;
+          });
+
+          setLogs(cleanedData);
+        }
       })
       .catch(err => console.log("Arka plan kapalı, yerel veriler kullanılıyor."));
   }, []);
@@ -40,10 +51,9 @@ export default function Sleep() {
       return;
     }
 
-    const formattedDate = new Date(date).toLocaleDateString('tr-TR', { day: '2-digit', month: 'short' });
-
+    // Tarihi metin olarak değil, evrensel standartta (YYYY-MM-DD) bırakıyoruz
     const newLog = {
-      date: formattedDate,
+      date: date, 
       hours: parseFloat(hours)
     };
 
@@ -51,25 +61,20 @@ export default function Sleep() {
       method: 'POST',
       headers: { 
         'Content-Type': 'application/json',
-        // YENİ: Arka plana seçili dili gönderiyoruz
         'Accept-Language': i18n.language || 'tr'
       },
       body: JSON.stringify(newLog)
     })
     .then(async (res) => {
-      // YENİ: Hata durumlarını ve yeni paket yapısını JSON olarak okuyoruz
       const responsePayload = await res.json();
-      
       if (!res.ok) {
         throw new Error(responsePayload.message || 'Sunucu hatası');
       }
       return responsePayload;
     })
     .then(responsePayload => {
-      // YENİ: Arka plandan gelen başarı mesajını ekranda gösteriyoruz
       alert(responsePayload.message);
 
-      // Veritabanına kaydedilen veriyi ekrana yansıtıyoruz
       setLogs([...logs, newLog]);
       setHours('');
       setDate(todayString);
@@ -77,7 +82,6 @@ export default function Sleep() {
     })
     .catch(err => {
       console.error("Uyku ekleme hatası:", err);
-      // Hata mesajını ekranda gösteriyoruz
       alert(err.message);
     });
   };
@@ -86,6 +90,15 @@ export default function Sleep() {
     if (hours >= 7) return '#10b981'; 
     if (hours >= 6) return '#f59e0b'; 
     return '#ef4444'; 
+  };
+
+  // Tarihleri seçili dile göre anlık olarak formatlayan fonksiyon
+  const formatChartDate = (dateString: string) => {
+    const d = new Date(dateString);
+    if (isNaN(d.getTime())) return dateString; 
+    
+    // Saf tarihi alıp anlık olarak aktif dile (i18n.language) çevirir
+    return d.toLocaleDateString(i18n.language || 'tr', { day: '2-digit', month: 'short' });
   };
 
   return (
@@ -128,7 +141,7 @@ export default function Sleep() {
                   <span>
                     {date === todayString 
                       ? `${t('dateText', 'Tarih:')} ${t('todayText', 'Bugün')}` 
-                      : `${t('dateText', 'Tarih:')} ${new Date(date).toLocaleDateString('tr-TR')}`}
+                      : `${t('dateText', 'Tarih:')} ${new Date(date).toLocaleDateString(i18n.language || 'tr')}`}
                   </span>
                 </div>
                 {showDatePicker ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
@@ -171,6 +184,7 @@ export default function Sleep() {
                     tickLine={false} 
                     tick={{ fontSize: 12, fontWeight: 'bold', fill: 'rgba(0,0,0,0.6)' }} 
                     dy={10}
+                    tickFormatter={formatChartDate}
                   />
                   <YAxis 
                     axisLine={false} 
@@ -180,6 +194,7 @@ export default function Sleep() {
                   <Tooltip 
                     cursor={{ fill: 'rgba(255,255,255,0.4)' }}
                     contentStyle={{ borderRadius: '16px', border: 'none', backgroundColor: 'rgba(255,255,255,0.9)', fontWeight: 'bold' }}
+                    labelFormatter={(label) => formatChartDate(String(label))}
                   />
                   <Bar dataKey="hours" radius={[8, 8, 8, 8]}>
                     {logs.map((entry, index) => (
