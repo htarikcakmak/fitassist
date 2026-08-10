@@ -128,6 +128,17 @@ const resources = {
       noData: "Veri Yok",
       dashboardProgressTitle: "Gelişim",
       dashboardProgressDesc: "İstatistiklerini gör",
+      height: "BOY",
+      age: "YAŞ",
+      createProfile: "Profil Oluştur",
+      createProfileDesc: "Kişiselleştirilmiş verilerin için profilini tamamla.",
+
+      // 9. GRAFİKLER VE MAKROLAR
+      macroDistribution: "Haftalık Makro Dağılımı",
+      noGraphData: "Grafik oluşturmak için öğünlerine besin ekle.",
+      proteinShort: "P",
+      carbsShort: "K",
+      fatShort: "Y"
     }
   },
   en: {
@@ -249,6 +260,17 @@ const resources = {
       noData: "No Data",
       dashboardProgressTitle: "Progress",
       dashboardProgressDesc: "View your stats",
+      height: "HEIGHT",
+      age: "AGE",
+      createProfile: "Create Profile",
+      createProfileDesc: "Complete your profile for personalized data.",
+
+      // 9. CHARTS AND MACROS
+      macroDistribution: "Weekly Macro Distribution",
+      noGraphData: "Add food to your meals to generate the chart.",
+      proteinShort: "P",
+      carbsShort: "C",
+      fatShort: "F"
     }
   },
   es: {
@@ -370,6 +392,17 @@ const resources = {
       noData: "Sin Datos",
       dashboardProgressTitle: "Progreso",
       dashboardProgressDesc: "Ver estadísticas",
+      height: "ALTURA",
+      age: "EDAD",
+      createProfile: "Crear Perfil",
+      createProfileDesc: "Completa tu perfil para datos personalizados.",
+
+      // 9. GRÁFICOS Y MACROS
+      macroDistribution: "Distribución de Macros",
+      noGraphData: "Añade alimentos a tus comidas para generar el gráfico.",
+      proteinShort: "P",
+      carbsShort: "C",
+      fatShort: "G"
     }
   },
   fr: {
@@ -394,7 +427,7 @@ const resources = {
       weeklyAnalysis: "Analyse Hebdomadaire",
       ideal: "Idéal",
       average: "Moyen",
-      insufficient: "Insuffisant",
+      insufficient: "Insuficiente",
       dateText: "Date :",
       todayText: "Aujourd'hui",
       noSleepDataLine1: "Vous n'avez pas encore entré de données de sommeil.",
@@ -491,6 +524,17 @@ const resources = {
       noData: "Pas de données",
       dashboardProgressTitle: "Progrès",
       dashboardProgressDesc: "Voir vos stats",
+      height: "TAILLE",
+      age: "ÂGE",
+      createProfile: "Créer un Profil",
+      createProfileDesc: "Complétez votre profil pour des données personnalisées.",
+
+      // 9. GRAPHIQUES ET MACROS
+      macroDistribution: "Distribution des Macros",
+      noGraphData: "Ajoutez des aliments pour générer le graphique.",
+      proteinShort: "P",
+      carbsShort: "G",
+      fatShort: "L"
     }
   },
   it: {
@@ -610,8 +654,19 @@ const resources = {
       dashboardSleepTitle: "Ultimo Sonno",
       hoursShort: "ore",
       noData: "Nessun Dato",
-      dashboardProgressTitle: "Progresso",
+      dashboardProgressTitle: "Progreso",
       dashboardProgressDesc: "Vedi le tue stat",
+      height: "ALTEZZA",
+      age: "ETÀ",
+      createProfile: "Crea Profilo",
+      createProfileDesc: "Completa il tuo profilo per dati personalizzati.",
+
+      // 9. GRAFICI E MACRO
+      macroDistribution: "Distribuzione dei Macro",
+      noGraphData: "Aggiungi cibo per generare il grafico.",
+      proteinShort: "P",
+      carbsShort: "C",
+      fatShort: "G"
     }
   },
   de: {
@@ -733,6 +788,17 @@ const resources = {
       noData: "Keine Daten",
       dashboardProgressTitle: "Fortschritt",
       dashboardProgressDesc: "Zeige deine Stats",
+      height: "GRÖßE",
+      age: "ALTER",
+      createProfile: "Profil Erstellen",
+      createProfileDesc: "Vervollständige dein Profil für personalisierte Daten.",
+
+      // 9. DIAGRAMME UND MAKROS
+      macroDistribution: "Makro-Verteilung",
+      noGraphData: "Füge Lebensmittel hinzu, um das Diagramm zu erstellen.",
+      proteinShort: "P",
+      carbsShort: "K",
+      fatShort: "F"
     }
   }
 };

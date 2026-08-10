@@ -2,6 +2,8 @@ import { useState, useContext } from 'react';
 import { BrowserRouter, Routes, Route, NavLink, Outlet, useLocation } from 'react-router-dom';
 import { Home, Dumbbell, Utensils, Droplets, LineChart as LineChartIcon, Settings as SettingsIcon, Moon, Globe, ChevronDown } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { User } from 'lucide-react'; // User ikonunu lucide-react listesine ekleme
+import Profile from './pages/Profile'; // Profil sayfasını import etme
 
 import { ThemeContext } from './context/ThemeContext';
 import Sleep from './pages/Sleep';
@@ -66,6 +68,7 @@ function Layout() {
     { path: '/water', icon: Droplets, label: t('Su') },
     { path: '/progress', icon: LineChartIcon, label: t('Gelişim') },
     { path: '/sleep', icon: Moon, label: t('Uyku') },
+    { path: '/profile', icon: User, label: t('profile', 'Profil') }, // BİRİNCİ EKLEME BURAYA
     { path: '/settings', icon: SettingsIcon, label: t('Ayarlar') },
   ];
 
@@ -185,15 +188,16 @@ export default function App() {
     <ThemeContext.Provider value={{ themeBg, themePrimary, setTheme: updateTheme }}>
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<Layout />}>
-            <Route index element={<Dashboard />} />
-            <Route path="workout" element={<Workout />} />
-            <Route path="/sleep" element={<Sleep />} />
-            <Route path="nutrition" element={<Nutrition />} />
-            <Route path="water" element={<WaterTracker />} />
-            <Route path="progress" element={<Progress />} />
-            <Route path="settings" element={<Settings />} />
-          </Route>
+         <Route path="/" element={<Layout />}>
+         <Route index element={<Dashboard />} />
+         <Route path="workout" element={<Workout />} />
+         <Route path="sleep" element={<Sleep />} />
+         <Route path="nutrition" element={<Nutrition />} />
+         <Route path="water" element={<WaterTracker />} />
+         <Route path="progress" element={<Progress />} />
+         <Route path="profile" element={<Profile />} /> {/* İKİNCİ EKLEME BURAYA */}
+         <Route path="settings" element={<Settings />} />
+         </Route>
         </Routes>
       </BrowserRouter>
     </ThemeContext.Provider>

@@ -1,5 +1,5 @@
 import { useState, useEffect, useContext } from 'react';
-import { Plus, X, Search, ChevronLeft, Minus, Beef, Wheat, Droplet } from 'lucide-react';
+import { Plus, X, Search, ChevronLeft, Minus, Beef, Wheat, Droplet, Utensils, BarChart3, Trash2 } from 'lucide-react';
 import { ThemeContext } from '../context/ThemeContext';
 import { FOOD_LIBRARY } from '../data/foodLibrary';
 import type { FoodItem } from '../data/foodLibrary';
@@ -18,22 +18,38 @@ export default function Nutrition() {
   const [quantity, setQuantity] = useState<number>(0);
 
   const { themeBg, themePrimary } = useContext(ThemeContext);
-  
-  // Çeviri fonksiyonu ve mevcut dili (i18n) dahil ediyoruz
   const { t, i18n } = useTranslation();
 
+  // --- DİNAMİK GRAFİK HESAPLAMALARI ---
+  const todayMacros = { p: 0, c: 0, f: 0 };
+  Object.values(meals).forEach(mealFoods => {
+    mealFoods.forEach(food => {
+      todayMacros.p += food.p;
+      todayMacros.c += food.c;
+      todayMacros.f += food.f;
+    });
+  });
+
+  const totalP = Number(todayMacros.p.toFixed(1));
+  const totalC = Number(todayMacros.c.toFixed(1));
+  const totalF = Number(todayMacros.f.toFixed(1));
+  const totalCalories = Math.round((totalP * 4) + (totalC * 4) + (totalF * 9));
+
+  const pPercent = totalCalories > 0 ? ((totalP * 4) / totalCalories) * 100 : 0;
+  const cPercent = totalCalories > 0 ? ((totalC * 4) / totalCalories) * 100 : 0;
+  const fPercent = totalCalories > 0 ? ((totalF * 9) / totalCalories) * 100 : 0;
+
+
+  // 1. VERİLERİ ÇEKME (READ)
   useEffect(() => {
     fetch('http://localhost:8080/api/nutrition/today')
       .then(res => res.json())
       .then(data => {
         const loadedMeals: MealsState = { 'Kahvaltı': [], 'Öğle': [], 'Akşam': [] };
         
-        // YENİ: Sadece formata uyan (veya tarih bilgisi olmayan) temiz verileri filtreliyoruz
         const cleanedData = data.filter((item: any) => {
-          if (item.date) {
-            return /^\d{4}-\d{2}-\d{2}/.test(item.date);
-          }
-          return true; // Tarih alanı yoksa veriyi kabul et
+          if (item.date) return /^\d{4}-\d{2}-\d{2}/.test(item.date);
+          return true; 
         });
 
         cleanedData.forEach((item: any) => {
@@ -60,11 +76,11 @@ export default function Nutrition() {
     setQuantity(food.unit === 'gram' ? 100 : 1);
   };
 
+  // 2. YENİ BESİN EKLEME (CREATE)
   const confirmAndAddFood = () => {
     if (!selectedFood || !modalData.mealType) return;
 
     const ratio = quantity / selectedFood.baseAmount;
-    
     const calculatedFood = {
       ...selectedFood,
       name: `${selectedFood.name} (${quantity} ${selectedFood.unit})`,
@@ -85,30 +101,45 @@ export default function Nutrition() {
 
     fetch('http://localhost:8080/api/nutrition/add', {
       method: 'POST',
-      headers: { 
-        'Content-Type': 'application/json',
-        'Accept-Language': i18n.language || 'tr' 
-      },
+      headers: { 'Content-Type': 'application/json', 'Accept-Language': i18n.language || 'tr' },
       body: JSON.stringify(payload)
     })
     .then(async (res) => {
       const responsePayload = await res.json();
-      
-      if (!res.ok) {
-        throw new Error(responsePayload.message || 'Sunucu hatası');
-      }
-      return responsePayload;
+      if (!res.ok) throw new Error(responsePayload.message || 'Sunucu hatası');
+      return { payload: responsePayload, addedFoodId: responsePayload.data?.id };
     })
-    .then((responsePayload) => {
-      alert(responsePayload.message);
-
-      setMeals(prev => ({ ...prev, [modalData.mealType]: [...prev[modalData.mealType], calculatedFood] }));
+    .then(({ payload, addedFoodId }) => {
+      const foodWithRealId = { ...calculatedFood, id: addedFoodId?.toString() || calculatedFood.id };
+      setMeals(prev => ({ ...prev, [modalData.mealType]: [...prev[modalData.mealType], foodWithRealId] }));
       closeModal();
     })
     .catch(err => {
       console.error("Besin ekleme hatası:", err);
       alert(err.message);
     });
+  };
+
+  // 3. YENİ EKLENEN SİLME İŞLEMİ (DELETE)
+  const handleDeleteFood = async (mealName: string, foodId: string) => {
+    if (!window.confirm("Bu besini silmek istediğinize emin misiniz?")) return;
+
+    try {
+      const res = await fetch(`http://localhost:8080/api/nutrition/delete/${foodId}`, {
+        method: 'DELETE'
+      });
+
+      if (res.ok) {
+        setMeals(prev => ({
+          ...prev,
+          [mealName]: prev[mealName].filter(food => food.id !== foodId)
+        }));
+      } else {
+        alert("Besin silinemedi. Lütfen tekrar deneyin.");
+      }
+    } catch (err) {
+      console.error("Besin silinirken hata:", err);
+    }
   };
 
   const closeModal = () => {
@@ -128,7 +159,6 @@ export default function Nutrition() {
   const filteredFoods = FOOD_LIBRARY.filter(food => {
     const matchesSearch = food.name.toLowerCase().includes(searchTerm.toLowerCase());
     if (!matchesSearch) return false;
-
     if (!activeMacroFilter) return true;
 
     const maxMacro = Math.max(food.p, food.c, food.f);
@@ -141,11 +171,14 @@ export default function Nutrition() {
 
   return (
     <div className="p-6 md:p-10 space-y-6 pb-32 md:pb-10 max-w-5xl mx-auto animate-in fade-in duration-500">
+      
+      {/* BAŞLIK */}
       <div>
         <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight mb-1">{t('nutritionTitle', 'Beslenme')}</h1>
         <p className="font-extrabold opacity-80">{t('nutritionDesc', 'Hedefine ulaşmak için ana öğünlerini takip et.')}</p>
       </div>
 
+      {/* ÖĞÜN KARTLARI */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {Object.entries(meals).map(([mealName, foods]) => {
           const mealCals = foods.reduce((acc, curr) => acc + curr.cal, 0);
@@ -160,11 +193,31 @@ export default function Nutrition() {
                 <div className="space-y-4 mb-5">
                   {foods.map((food, i) => (
                     <div key={i} className="flex flex-col gap-2 bg-white/60 border border-white/80 p-4 rounded-xl shadow-sm">
-                      <span className="text-sm font-extrabold text-center border-b border-white/50 pb-2 mb-1">{food.name}</span>
+                      
+                      {/* DÜZELTME: SİLME BUTONU VE BAŞLIK TASARIMI */}
+                      <div className="flex justify-between items-start border-b border-white/50 pb-2 mb-1 gap-2">
+                        {/* Soldaki görünmez boşluk: Metnin sağdaki butona rağmen tam ortalanmasını sağlar */}
+                        <div className="w-8 shrink-0"></div>
+                        
+                        {/* Yiyecek İsmi: Satır atladığında ezilmemesi için leading-snug eklendi */}
+                        <span className="text-sm font-extrabold text-center flex-1 leading-snug self-center">
+                          {food.name}
+                        </span>
+                        
+                        {/* Silme Butonu: absolute kaldırıldı, shrink-0 ile küçülerek ezilmesi engellendi */}
+                        <button 
+                          onClick={() => handleDeleteFood(mealName, food.id)}
+                          className="p-1.5 text-red-400 hover:bg-red-500/10 hover:text-red-600 rounded-lg transition-all shrink-0 self-center"
+                          title="Besini Sil"
+                        >
+                          <Trash2 size={18} />
+                        </button>
+                      </div>
+
                       <div className="flex justify-between items-center text-xs font-extrabold w-full opacity-80">
-                        <span className="bg-white/40 px-2 py-1 rounded-md w-1/3 text-center mx-1">P: {food.p}g</span>
-                        <span className="bg-white/40 px-2 py-1 rounded-md w-1/3 text-center mx-1">K: {food.c}g</span>
-                        <span className="bg-white/40 px-2 py-1 rounded-md w-1/3 text-center mx-1">Y: {food.f}g</span>
+                        <span className="bg-white/40 px-2 py-1 rounded-md w-1/3 text-center mx-1">{t('proteinShort', 'P')}: {food.p}g</span>
+                        <span className="bg-white/40 px-2 py-1 rounded-md w-1/3 text-center mx-1">{t('carbsShort', 'K')}: {food.c}g</span>
+                        <span className="bg-white/40 px-2 py-1 rounded-md w-1/3 text-center mx-1">{t('fatShort', 'Y')}: {food.f}g</span>
                       </div>
                     </div>
                   ))}
@@ -181,6 +234,56 @@ export default function Nutrition() {
         })}
       </div>
 
+      {/* DİNAMİK MAKRO GRAFİĞİ */}
+      <div className="w-full bg-white/40 backdrop-blur-xl rounded-[2rem] p-6 md:p-8 border border-white/60 shadow-[0_8px_30px_rgb(0,0,0,0.04)] mt-6">
+        
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+          <div className="flex items-center gap-3">
+            <div className="bg-white/50 p-2 rounded-xl">
+              <Utensils size={24} strokeWidth={2.5} color={themePrimary} />
+            </div>
+            <h2 className="text-xl font-extrabold tracking-tight">{t('macroDistribution', 'Makro Dağılımı')}</h2>
+          </div>
+          
+          <div className="flex gap-4 text-xs font-bold opacity-80">
+            <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-full bg-blue-500"></div> {t('protein', 'Protein')}</div>
+            <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-full bg-yellow-400"></div> {t('fat', 'Yağ')}</div>
+            <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-full bg-amber-700"></div> {t('carbsLong', 'Karb')}</div>
+          </div>
+        </div>
+
+        {totalCalories > 0 ? (
+          <div className="flex justify-center items-end h-64 md:h-72 gap-4 pb-2">
+            <div className="flex flex-col items-center animate-in slide-in-from-bottom-4 duration-500">
+              <span className="text-xs font-extrabold opacity-60 mb-2">{totalCalories} kcal</span>
+              
+              <div className="w-16 md:w-20 h-48 flex flex-col justify-end rounded-t-xl overflow-hidden bg-white/20 border-x border-t border-white/50 shadow-inner">
+                <div style={{ height: `${pPercent}%` }} className="bg-blue-500 w-full transition-all duration-700 ease-out" title={`Protein: ${totalP * 4} kcal`}></div>
+                <div style={{ height: `${fPercent}%` }} className="bg-yellow-400 w-full transition-all duration-700 ease-out" title={`Yağ: ${totalF * 9} kcal`}></div>
+                <div style={{ height: `${cPercent}%` }} className="bg-amber-700 w-full transition-all duration-700 ease-out" title={`Karb: ${totalC * 4} kcal`}></div>
+              </div>
+
+              <span className="mt-3 font-black text-base border-b-2" style={{ borderColor: themePrimary }}>
+                {t('todayText', 'Bugün')}
+              </span>
+
+              <div className="flex flex-col items-center mt-2 text-xs md:text-sm font-bold opacity-80 gap-0.5">
+                <span className="text-blue-600 dark:text-blue-500">{totalP}g {t('proteinShort', 'P')}</span>
+                <span className="text-amber-800 dark:text-amber-700">{totalC}g {t('carbsShort', 'C')}</span>
+                <span className="text-yellow-600 dark:text-yellow-500">{totalF}g {t('fatShort', 'Y')}</span>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="flex flex-col items-center justify-center py-10 opacity-60 text-center animate-in fade-in">
+            <BarChart3 size={48} className="mb-4" />
+            <p className="font-extrabold text-lg">{t('noGraphData', 'Grafik oluşturmak için öğünlerine besin ekle.')}</p>
+          </div>
+        )}
+
+      </div>
+
+      {/* MODAL KISMI */}
       {modalData.isOpen && (
         <div className="fixed inset-0 z-[100] flex flex-col justify-end bg-black/20 backdrop-blur-sm animate-in fade-in duration-300">
           <div className="rounded-t-[2.5rem] h-[90vh] flex flex-col shadow-2xl border-t border-white/50 animate-in slide-in-from-bottom-full duration-400 max-w-2xl mx-auto w-full" style={{ backgroundColor: themeBg }}>

@@ -1,180 +1,270 @@
 import { useState, useEffect, useContext } from 'react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { LineChart as LineChartIcon, Plus, Trash2, Calendar as CalendarIcon } from 'lucide-react';
 import { ThemeContext } from '../context/ThemeContext';
 import { useTranslation } from 'react-i18next';
-import i18n from '../i18n';
+
+// Gelen verinin yapısı
+interface ProgressRecord {
+  id: number;
+  date: string;
+  weight: number;
+}
 
 export default function Progress() {
-  const metrics = ['weight', 'bodyFat', 'muscleMass'];
-  const [activeMetric, setActiveMetric] = useState('weight');
-  const [inputValue, setInputValue] = useState('');
-  
-  // YENİ: Veri yapımıza 'uniqueKey' adında benzersiz bir kimlik ekledik
-  const [metricData, setMetricData] = useState<Record<string, {uniqueKey: string, date: string, value: number}[]>>({});
-  
-  const { themeBg, themePrimary } = useContext(ThemeContext);
-  const { t } = useTranslation();
+  const { themePrimary } = useContext(ThemeContext);
+  const { t, i18n } = useTranslation();
+
+  const [progressData, setProgressData] = useState<ProgressRecord[]>([]);
+  const [weight, setWeight] = useState<number | ''>('');
+  const [date, setDate] = useState<string>(new Date().toISOString().split('T')[0]);
 
   useEffect(() => {
-    fetch('http://localhost:8080/api/progress/all')
-      .then(res => res.json())
-      .then((data: any[]) => {
-        const formattedData: Record<string, {uniqueKey: string, date: string, value: number}[]> = {
-          'weight': [], 'bodyFat': [], 'muscleMass': []
-        };
-        
-        // Eski bozuk verileri filtreleme kuralımız (YYYY-MM-DD) aynen duruyor
-        const validData = data.filter(item => {
-          if (!item.date) return false;
-          return /^\d{4}-\d{2}-\d{2}/.test(item.date);
-        });
-        
-        // YENİ: Her veriye sırasına (index) göre benzersiz bir kimlik veriyoruz.
-        // Böylece aynı gün girilmiş olsalar bile grafikte üst üste binmek yerine yan yana dizilecekler.
-        validData.forEach((item, index) => {
-          const dateStr = item.date.split('T')[0];
-          const uniqueKey = `${index}_${dateStr}`; 
-          
-          if (item.weight) formattedData['weight'].push({ uniqueKey, date: dateStr, value: item.weight });
-          if (item.bodyFatPercentage) formattedData['bodyFat'].push({ uniqueKey, date: dateStr, value: item.bodyFatPercentage });
-          if (item.muscleMass) formattedData['muscleMass'].push({ uniqueKey, date: dateStr, value: item.muscleMass });
-        });
-        
-        setMetricData(formattedData);
-      })
-      .catch(err => console.error("Veri çekme hatası:", err));
+    fetchProgressData();
   }, []);
 
-  const handleSave = () => {
-    if (!inputValue) return;
-    
-    const payload: any = {};
-    if (activeMetric === 'weight') payload.weight = parseFloat(inputValue);
-    if (activeMetric === 'bodyFat') payload.bodyFatPercentage = parseFloat(inputValue);
-    if (activeMetric === 'muscleMass') payload.muscleMass = parseFloat(inputValue);
+  const fetchProgressData = async () => {
+    try {
+      const res = await fetch('http://localhost:8080/api/progress/all');
+      if (res.ok) {
+        const data = await res.json();
+        // LİSTE İÇİN: Yeniden -> Eskiye. (Aynı günse son eklenen üstte kalsın)
+        const sortedData = data.sort((a: ProgressRecord, b: ProgressRecord) => {
+          const timeDiff = new Date(b.date).getTime() - new Date(a.date).getTime();
+          if (timeDiff !== 0) return timeDiff;
+          return b.id - a.id; 
+        });
+        setProgressData(sortedData);
+      }
+    } catch (err) {
+      console.error("Kilo verileri çekilemedi:", err);
+    }
+  };
 
-    fetch('http://localhost:8080/api/progress/add', {
-      method: 'POST',
-      headers: { 
-        'Content-Type': 'application/json',
-        'Accept-Language': i18n.language || 'tr'
-      },
-      body: JSON.stringify(payload)
-    })
-    .then(async (res) => {
-      const responsePayload = await res.json();
-      if (!res.ok) throw new Error(responsePayload.message || 'Sunucu hatası');
-      return responsePayload;
-    })
-    .then(responsePayload => {
-      alert(responsePayload.message);
+  const handleSave = async () => {
+    if (!weight || weight <= 0) {
+      alert(t('enterValue', 'Değer girin...'));
+      return;
+    }
 
-      const savedItem = responsePayload.data;
-      const dateStr = savedItem.date.split('T')[0];
-      
-      // Anlık girilen veriye de o anki milisaniye (Date.now) ile benzersiz bir kimlik veriyoruz
-      const uniqueKey = `${Date.now()}_${dateStr}`;
-      
-      setMetricData(prev => {
-        const currentList = prev[activeMetric] || [];
-        // Yeni girilen değeri tekilleştirmeden, doğrudan listenin sonuna yeni bir nokta olarak ekliyoruz
-        return { 
-          ...prev, 
-          [activeMetric]: [...currentList, { uniqueKey, date: dateStr, value: parseFloat(inputValue) }] 
-        };
+    try {
+      const res = await fetch('http://localhost:8080/api/progress/add', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ weight: Number(weight), date: date })
       });
-      setInputValue('');
-    })
-    .catch(err => {
-      console.error("Kaydetme hatası:", err);
-      alert(err.message);
-    });
+
+      if (res.ok) {
+        setWeight(''); 
+        fetchProgressData(); 
+      }
+    } catch (err) {
+      console.error("Kilo eklenirken hata:", err);
+    }
   };
 
-  const currentData = metricData[activeMetric] || [];
+  const handleDelete = async (id: number) => {
+    if (!window.confirm("Bu ölçüm kaydını silmek istediğinize emin misiniz?")) return;
 
-  // YENİ: Grafiğin altındaki yazıları (tick) formatlarken benzersiz kimlikteki numarayı atıp sadece tarihi gösteriyoruz
-  const formatChartDate = (keyString: string) => {
-    if (!keyString) return '';
-    // "1_2026-08-09" gibi gelen string'den alt tireyi bulup sağındaki tarihi alıyoruz
-    const parts = keyString.split('_');
-    const rawDate = parts.length > 1 ? parts[1] : keyString;
+    try {
+      const res = await fetch(`http://localhost:8080/api/progress/delete/${id}`, {
+        method: 'DELETE'
+      });
 
-    const d = new Date(rawDate);
-    if (isNaN(d.getTime())) return rawDate; 
-    return d.toLocaleDateString(i18n.language || 'tr', { day: '2-digit', month: 'short' });
+      if (res.ok) {
+        setProgressData(prevData => prevData.filter(record => record.id !== id));
+      } else {
+        alert("Silme işlemi başarısız oldu.");
+      }
+    } catch (err) {
+      console.error("Kilo kaydı silinirken hata:", err);
+    }
   };
+
+  // --- GRAFİK HESAPLAMALARI ---
+  
+  // 1. ZAMAN TÜNELİ: Eskiden -> Yeniye. (Aynı günse ilk eklenen solda kalsın)
+  const chartData = [...progressData].sort((a, b) => {
+    const timeDiff = new Date(a.date).getTime() - new Date(b.date).getTime();
+    if (timeDiff !== 0) return timeDiff;
+    return a.id - b.id;
+  });
+  
+  // 2. NEFES PAYI VE ORAN
+  const weights = chartData.map(d => d.weight);
+  const maxWeight = weights.length > 0 ? Math.max(...weights) : 100;
+  const minWeight = weights.length > 0 ? Math.min(...weights) : 0;
+  const rawRange = maxWeight - minWeight;
+  
+  const buffer = rawRange === 0 ? 5 : rawRange * 0.2; 
+  const displayMin = minWeight - buffer;
+  const displayMax = maxWeight + buffer;
+  const displayRange = displayMax - displayMin;
+
+  const paddingX = 10; // Kenar boşluğu (Yüzde olarak)
 
   return (
-    <div className="p-6 md:p-10 space-y-8 pb-32 md:pb-10 max-w-5xl mx-auto animate-in fade-in duration-500">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div className="p-6 md:p-10 space-y-6 pb-32 md:pb-10 max-w-5xl mx-auto animate-in fade-in duration-500">
+      
+      <div className="flex items-center gap-3 mb-8">
+        <LineChartIcon size={36} strokeWidth={2.5} style={{ color: themePrimary }} />
         <div>
-          <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight">{t('progressTitle')}</h1>
-          <p className="font-medium opacity-80 mt-1">{t('progressDesc')}</p>
-        </div>
-        <div className="flex overflow-x-auto gap-4 pb-2 no-scrollbar">
-          {metrics.map((metric) => (
-            <button 
-              key={metric} 
-              onClick={() => setActiveMetric(metric)} 
-              style={{
-                backgroundColor: activeMetric === metric ? themePrimary : 'rgba(255,255,255,0.4)',
-                color: activeMetric === metric ? themeBg : themePrimary,
-                borderColor: activeMetric === metric ? 'transparent' : 'rgba(255,255,255,0.6)'
-              }}
-              className="flex-shrink-0 px-6 py-3 rounded-xl text-sm font-extrabold transition-all duration-300 active:scale-95 border backdrop-blur-md"
-            >
-              {t(metric)}
-            </button>
-          ))}
+          <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight mb-1" style={{ color: themePrimary }}>
+            {t('progressTitle', 'Gelişim Takibi')}
+          </h1>
+          <p className="font-extrabold opacity-80">{t('progressDesc', 'Ölçümlerini gir, grafiği oluştur.')}</p>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        <div className="bg-white/40 backdrop-blur-xl rounded-[2rem] p-6 shadow-sm border border-white/60">
-          <h2 className="text-lg font-extrabold mb-6 flex items-center justify-between">
-            <span>{t(activeMetric)} {t('history')}</span>
-          </h2>
-          <div className="h-64 w-full flex items-center justify-center">
-            {currentData.length > 0 ? (
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={currentData} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke={themePrimary} vertical={false} opacity={0.3} />
-                  
-                  {/* dataKey artık "date" değil, "uniqueKey". Böylece her nokta bağımsız çiziliyor. */}
-                  <XAxis dataKey="uniqueKey" stroke={themePrimary} fontSize={12} tickLine={false} axisLine={false} fontWeight={700} tickFormatter={formatChartDate} />
-                  
-                  <YAxis stroke={themePrimary} fontSize={12} tickLine={false} axisLine={false} fontWeight={700} />
-                  <Tooltip contentStyle={{ backgroundColor: themeBg, borderRadius: '16px', border: '1px solid white', fontWeight: 'bold', color: themePrimary }} labelFormatter={(label) => typeof label === 'string' ? formatChartDate(label) : label} />
-                  <Line type="monotone" dataKey="value" stroke={themePrimary} strokeWidth={4} dot={{ r: 6, fill: '#fff', stroke: themePrimary, strokeWidth: 3 }} activeDot={{ r: 8, fill: themePrimary, stroke: '#fff', strokeWidth: 3 }} />
-                </LineChart>
-              </ResponsiveContainer>
-            ) : (
-              <p className="opacity-60 font-bold text-center">
-                {t('noDataLine1')}<br/>{t('noDataLine2')}
-              </p>
-            )}
-          </div>
-        </div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        
+        {/* SOL PANEL */}
+        <div className="bg-white/40 backdrop-blur-xl rounded-[2rem] p-6 shadow-sm border border-white/60 h-fit">
+          <h3 className="text-xl font-extrabold mb-6" style={{ color: themePrimary }}>{t('newWeightRecord', 'Yeni Kilo Kaydı')}</h3>
+          
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <label className="text-sm font-extrabold opacity-80">{t('weight', 'Kilo')} (kg)</label>
+              <div className="relative">
+                <input 
+                  type="number" 
+                  value={weight}
+                  onChange={(e) => setWeight(Number(e.target.value) || '')}
+                  placeholder={t('enterValue', 'Değer girin...')}
+                  className="w-full bg-white border border-white/80 rounded-xl px-4 py-4 text-xl font-black focus:outline-none transition-all shadow-inner text-center"
+                />
+              </div>
+            </div>
 
-        <div className="bg-white/40 backdrop-blur-xl rounded-[2rem] p-6 shadow-sm border border-white/60">
-          <h2 className="text-lg font-extrabold mb-6">{t('newWeightRecord')}</h2>
-          <div className="flex flex-col sm:flex-row items-center gap-3 w-full">
-            <input 
-              type="number" 
-              placeholder={t('enterValue')} 
-              value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
-              className="flex-1 w-full bg-white/60 border border-white/80 rounded-xl px-4 py-3 font-bold focus:outline-none focus:bg-white transition-all shadow-inner"
-            />
+            <div className="space-y-2">
+              <label className="text-sm font-extrabold opacity-80">{t('dateText', 'Tarih:')}</label>
+              <div className="relative">
+                <CalendarIcon size={18} className="absolute left-4 top-1/2 -translate-y-1/2 opacity-50" color={themePrimary} />
+                <input 
+                  type="date" 
+                  value={date}
+                  onChange={(e) => setDate(e.target.value)}
+                  className="w-full bg-white/60 border border-white/80 rounded-xl pl-12 pr-4 py-3 font-bold focus:outline-none transition-all shadow-inner"
+                />
+              </div>
+            </div>
+
             <button 
               onClick={handleSave}
-              className="w-full sm:w-auto px-6 py-3 bg-white hover:bg-white/90 rounded-xl font-extrabold shadow-sm active:scale-95 transition-all"
+              className="w-full py-4 mt-2 rounded-xl bg-white hover:bg-white/90 border border-white/80 font-black text-lg active:scale-95 transition-all shadow-sm flex items-center justify-center gap-2"
+              style={{ color: themePrimary }}
             >
-              {t('saveBtn')}
+              <Plus size={20} strokeWidth={3} /> {t('saveBtn', 'Kaydet')}
             </button>
           </div>
         </div>
+
+        {/* SAĞ PANEL */}
+        <div className="md:col-span-2 space-y-6">
+          <div className="bg-white/40 backdrop-blur-xl rounded-[2rem] p-6 shadow-sm border border-white/60 flex flex-col h-full">
+            <h3 className="text-xl font-extrabold mb-6" style={{ color: themePrimary }}>{t('weightHistory', 'Kilo Geçmişi')}</h3>
+            
+            {chartData.length > 0 ? (
+              <div className="w-full h-48 md:h-56 mb-8 relative border-b border-black/10 pb-4 pt-4">
+                
+                {/* viewBox TAMAMEN KALDIRILDI. Koordinatlar yüzdelik (%) olarak işleniyor */}
+                <svg className="w-full h-full overflow-visible">
+                  
+                  {/* Arka plan referans çizgileri */}
+                  <line x1="0%" y1="20%" x2="100%" y2="20%" stroke="currentColor" strokeWidth="1" className="opacity-20" strokeDasharray="4" />
+                  <line x1="0%" y1="50%" x2="100%" y2="50%" stroke="currentColor" strokeWidth="1" className="opacity-20" strokeDasharray="4" />
+                  <line x1="0%" y1="80%" x2="100%" y2="80%" stroke="currentColor" strokeWidth="1" className="opacity-20" strokeDasharray="4" />
+                  
+                  {/* Dinamik Çizgi Grafiği (Segmentler halinde çiziliyor) */}
+                  {chartData.map((d, i) => {
+                    if (i === chartData.length - 1) return null; // Son nokta ise çizgi çizilmez
+                    
+                    const nextD = chartData[i + 1];
+                    
+                    const x1 = chartData.length > 1 ? paddingX + (i / (chartData.length - 1)) * (100 - 2 * paddingX) : 50;
+                    const y1 = 80 - (((d.weight - displayMin) / displayRange) * 60);
+                    
+                    const x2 = paddingX + ((i + 1) / (chartData.length - 1)) * (100 - 2 * paddingX);
+                    const y2 = 80 - (((nextD.weight - displayMin) / displayRange) * 60);
+
+                    return (
+                      <line 
+                        key={`line-${i}`}
+                        x1={`${x1}%`} y1={`${y1}%`} 
+                        x2={`${x2}%`} y2={`${y2}%`} 
+                        stroke={themePrimary} 
+                        strokeWidth="4" 
+                        strokeLinecap="round" 
+                        className="transition-all duration-700 ease-in-out"
+                      />
+                    );
+                  })}
+                  
+                  {/* Kusursuz Geometrik Noktalar (Circles) ve Metinler */}
+                  {chartData.map((d, i) => {
+                    const x = chartData.length > 1 ? paddingX + (i / (chartData.length - 1)) * (100 - 2 * paddingX) : 50;
+                    const y = 80 - (((d.weight - displayMin) / displayRange) * 60);
+                    return (
+                      <g key={`point-${i}`}>
+                        {/* r="6" tam olarak 6 piksel yarıçap demektir. Asla bozulmaz/esnemez. */}
+                        <circle 
+                          cx={`${x}%`} cy={`${y}%`} 
+                          r="6" 
+                          fill="white" 
+                          stroke={themePrimary} 
+                          strokeWidth="3.5" 
+                          className="transition-all duration-700 ease-in-out cursor-pointer hover:opacity-80" 
+                        />
+                        <text 
+                          x={`${x}%`} y={`calc(${y}% - 14px)`} 
+                          fontSize="13" 
+                          fill="currentColor" 
+                          fontWeight="bold" 
+                          textAnchor="middle" 
+                          className="opacity-80"
+                        >
+                          {d.weight}
+                        </text>
+                      </g>
+                    );
+                  })}
+                </svg>
+              </div>
+            ) : (
+              <div className="h-48 md:h-56 mb-8 flex items-center justify-center border-b border-black/10">
+                <div className="text-center opacity-60">
+                  <p className="font-bold">{t('noDataLine1', 'Henüz veri yok.')}</p>
+                  <p className="text-sm">{t('noDataLine2', 'İlk ölçümünü yandaki formdan ekle!')}</p>
+                </div>
+              </div>
+            )}
+
+            <div className="space-y-3 max-h-60 overflow-y-auto pr-2 no-scrollbar">
+              {progressData.length > 0 && progressData.map((record) => {
+                const dateObj = new Date(record.date);
+                const formattedDate = dateObj.toLocaleDateString(i18n.language || 'tr', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+                
+                return (
+                  <div key={record.id} className="flex items-center justify-between bg-white/60 p-4 rounded-2xl border border-white/80 shadow-sm transition-all hover:bg-white/80">
+                    <div>
+                      <p className="font-extrabold text-lg">{record.weight} kg</p>
+                      <p className="text-xs font-bold opacity-60">{formattedDate}</p>
+                    </div>
+                    
+                    <button 
+                      onClick={() => handleDelete(record.id)}
+                      className="p-3 bg-red-500/10 hover:bg-red-500/20 rounded-xl text-red-600 active:scale-90 transition-all"
+                      title="Kaydı Sil"
+                    >
+                      <Trash2 size={20} />
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+
+          </div>
+        </div>
+
       </div>
     </div>
   );

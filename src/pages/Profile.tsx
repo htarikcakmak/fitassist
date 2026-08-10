@@ -1,5 +1,5 @@
-import { useState, useContext } from 'react';
-import { User, Ruler, Weight, Target, Save } from 'lucide-react';
+import { useState, useContext, useRef, useEffect } from 'react';
+import { User, Mail, Lock, Camera, LogOut, ArrowRight, Ruler, Weight, Target, Save, Edit3, Calendar } from 'lucide-react';
 import { ThemeContext } from '../context/ThemeContext';
 import { useTranslation } from 'react-i18next';
 
@@ -7,99 +7,283 @@ export default function Profile() {
   const { themePrimary } = useContext(ThemeContext);
   const { t } = useTranslation();
 
-  // Arka plandan (Spring Boot) gelecek varsayılan veriler için state'lerimiz
-  const [name, setName] = useState('Tarık');
-  const [height, setHeight] = useState('185');
-  const [weight, setWeight] = useState('92');
-  const [goal, setGoal] = useState('Vücut Kompozisyonu');
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  // DÜZELTME: authMode artık 3 farklı durum alabiliyor
+  const [authMode, setAuthMode] = useState<'login' | 'register' | 'forgotPassword'>('login');
+  const [isEditing, setIsEditing] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleSave = () => {
-    // İleride bu bilgileri Spring Boot backend'imize göndereceğiz
-    console.log("Kaydedilecek Veriler:", { name, height, weight, goal });
+  // --- KULLANICI VERİLERİ ---
+  const [userId, setUserId] = useState<number | null>(null);
+  const [name, setName] = useState(''); 
+  const [email, setEmail] = useState('');
+  const [height, setHeight] = useState('');
+  const [weight, setWeight] = useState('');
+  const [age, setAge] = useState(''); 
+  const [goal, setGoal] = useState('Vücut Kompozisyonu');
+  const [profilePic, setProfilePic] = useState('https://api.dicebear.com/7.x/avataaars/svg?seed=User&backgroundColor=transparent');
+
+  const [tempEmail, setTempEmail] = useState('');
+  const [tempName, setTempName] = useState('');
+  const [tempPassword, setTempPassword] = useState('');
+
+  useEffect(() => {
+    const storedUser = localStorage.getItem('fitassist_user');
+    if (storedUser) {
+      const user = JSON.parse(storedUser);
+      setUserId(user.id);
+      setName(user.name);
+      setEmail(user.email);
+      setHeight(user.height || '');
+      setWeight(user.weight || '');
+      setAge(user.age || ''); 
+      setGoal(user.goal || 'Vücut Kompozisyonu');
+      if (user.imageUrl) setProfilePic(user.imageUrl);
+      setIsLoggedIn(true);
+    }
+  }, []);
+
+  const handleAuth = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    // YENİ: Şifre sıfırlama işlemi ise sadece uyarı ver ve giriş ekranına dön
+    if (authMode === 'forgotPassword') {
+      alert(t('resetLinkSentAlert', 'Şifre sıfırlama bağlantısı e-posta adresinize gönderildi! (Lütfen gelen kutunuzu kontrol edin)'));
+      setAuthMode('login');
+      setTempEmail('');
+      return;
+    }
+
+    const endpoint = authMode === 'register' ? '/register' : '/login';
+    const url = `http://localhost:8080/api/users${endpoint}`;
+    const payload = authMode === 'register' 
+      ? { name: tempName, email: tempEmail, password: tempPassword } 
+      : { email: tempEmail, password: tempPassword };
+
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        alert("Hata: " + errorText); 
+        return;
+      }
+
+      const userData = await response.json(); 
+      setUserId(userData.id);
+      setName(userData.name);
+      setEmail(userData.email);
+      setIsLoggedIn(true);
+
+      localStorage.setItem('fitassist_user', JSON.stringify(userData));
+      setTempPassword('');
+    } catch (error) {
+      console.error("Sunucuya bağlanılamadı:", error);
+      alert("Sunucuya bağlanılamadı. Java projesinin çalıştığından emin ol.");
+    }
+  };
+
+  const handleLogout = () => {
+    setIsLoggedIn(false);
+    setAuthMode('login');
+    setIsEditing(false);
+    localStorage.removeItem('fitassist_user');
+  };
+
+  const handleSaveProfile = () => {
+    const updatedUser = { id: userId, name, email, height, weight, age, goal, imageUrl: profilePic };
+    localStorage.setItem('fitassist_user', JSON.stringify(updatedUser)); 
+    setIsEditing(false);
     alert(t('saveSuccess', 'Profil başarıyla güncellendi!'));
   };
 
+  const handleImageClick = () => fileInputRef.current?.click();
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const imageUrl = URL.createObjectURL(file);
+      setProfilePic(imageUrl);
+    }
+  };
+
   return (
-    <div className="px-6 md:p-10 mt-2 md:mt-6 space-y-6 animate-in fade-in duration-500 max-w-2xl mx-auto flex flex-col justify-start pb-32">
+    <div className="px-6 md:p-10 mt-2 md:mt-6 animate-in fade-in duration-500 max-w-lg mx-auto flex flex-col justify-center h-full pb-32">
       
-      <div className="flex flex-col items-start px-2 mb-2">
-        <h2 className="text-3xl md:text-4xl font-black tracking-tight">
-          {t('profileTitle', 'Profilim')}
-        </h2>
-        <p className="font-medium opacity-80 mt-1">
-          {t('profileDesc', 'Kişisel metriklerini güncel tut.')}
-        </p>
-      </div>
-
-      <div className="w-full bg-white/40 backdrop-blur-xl rounded-[2rem] p-6 md:p-8 border border-white/60 shadow-[0_8px_30px_rgb(0,0,0,0.04)] space-y-6">
-        
-        {/* İsim Alanı */}
-        <div className="space-y-2">
-          <label className="flex items-center gap-2 text-sm font-extrabold opacity-80">
-            <User size={16} color={themePrimary} /> {t('nameLabel', 'Ad Soyad')}
-          </label>
-          <input 
-            type="text" 
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            className="w-full bg-white/60 border border-white/80 rounded-xl px-4 py-3 font-bold focus:outline-none transition-all shadow-inner"
-          />
-        </div>
-
-        <div className="grid grid-cols-2 gap-4">
-          {/* Boy Alanı */}
-          <div className="space-y-2">
-            <label className="flex items-center gap-2 text-sm font-extrabold opacity-80">
-              <Ruler size={16} color={themePrimary} /> {t('heightLabel', 'Boy (cm)')}
-            </label>
-            <input 
-              type="number" 
-              value={height}
-              onChange={(e) => setHeight(e.target.value)}
-              className="w-full bg-white/60 border border-white/80 rounded-xl px-4 py-3 font-bold focus:outline-none transition-all shadow-inner"
-            />
+      {!isLoggedIn ? (
+        <div className="w-full bg-white/40 backdrop-blur-xl rounded-[2.5rem] p-8 border border-white/60 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
+          <div className="text-center mb-8">
+            <h2 className="text-3xl font-black tracking-tight mb-2">
+              {/* Başlık Duruma Göre Değişir */}
+              {authMode === 'login' && t('loginTitle', 'Giriş Yap')}
+              {authMode === 'register' && t('registerTitle', 'Hesap Oluştur')}
+              {authMode === 'forgotPassword' && t('forgotPasswordTitle', 'Şifreni Sıfırla')}
+            </h2>
+            <p className="text-sm font-bold opacity-70">
+              {authMode === 'login' && t('loginDesc', 'Verilerine ulaşmak için giriş yap.')}
+              {authMode === 'register' && t('registerDesc', 'FitAssist ile hedeflerine ulaşmaya başla.')}
+              {authMode === 'forgotPassword' && t('forgotPasswordDesc', 'Kayıtlı e-posta adresini gir, sana bir sıfırlama bağlantısı gönderelim.')}
+            </p>
           </div>
 
-          {/* Kilo Alanı */}
-          <div className="space-y-2">
-            <label className="flex items-center gap-2 text-sm font-extrabold opacity-80">
-              <Weight size={16} color={themePrimary} /> {t('weightLabel', 'Kilo (kg)')}
-            </label>
-            <input 
-              type="number" 
-              value={weight}
-              onChange={(e) => setWeight(e.target.value)}
-              className="w-full bg-white/60 border border-white/80 rounded-xl px-4 py-3 font-bold focus:outline-none transition-all shadow-inner"
-            />
+          <form onSubmit={handleAuth} className="space-y-4">
+            
+            {/* Sadece Kayıt Ol Ekranında İsim İste */}
+            {authMode === 'register' && (
+              <div className="relative">
+                <User size={20} className="absolute left-4 top-1/2 -translate-y-1/2 opacity-50" color={themePrimary} />
+                <input type="text" value={tempName} onChange={(e) => setTempName(e.target.value)} placeholder={t('namePlaceholder', 'Ad Soyad')} required className="w-full bg-white/60 border border-white/80 rounded-2xl pl-12 pr-4 py-4 font-bold focus:outline-none focus:ring-2 transition-all shadow-inner" style={{ '--tw-ring-color': themePrimary } as React.CSSProperties} />
+              </div>
+            )}
+
+            {/* E-posta Her Ekran İçin Gerekli */}
+            <div className="relative">
+              <Mail size={20} className="absolute left-4 top-1/2 -translate-y-1/2 opacity-50" color={themePrimary} />
+              <input type="email" value={tempEmail} onChange={(e) => setTempEmail(e.target.value)} placeholder={t('emailPlaceholder', 'E-posta Adresi')} required className="w-full bg-white/60 border border-white/80 rounded-2xl pl-12 pr-4 py-4 font-bold focus:outline-none focus:ring-2 transition-all shadow-inner" style={{ '--tw-ring-color': themePrimary } as React.CSSProperties} />
+            </div>
+
+            {/* Şifre Alanı Sadece Giriş ve Kayıt Ekranında Gözükür */}
+            {authMode !== 'forgotPassword' && (
+              <div className="relative">
+                <Lock size={20} className="absolute left-4 top-1/2 -translate-y-1/2 opacity-50" color={themePrimary} />
+                <input type="password" value={tempPassword} onChange={(e) => setTempPassword(e.target.value)} placeholder={t('passwordPlaceholder', 'Şifre')} required className="w-full bg-white/60 border border-white/80 rounded-2xl pl-12 pr-4 py-4 font-bold focus:outline-none focus:ring-2 transition-all shadow-inner" style={{ '--tw-ring-color': themePrimary } as React.CSSProperties} />
+              </div>
+            )}
+
+            {/* YENİ: Giriş Ekranındaysa "Şifremi Unuttum" linki */}
+            {authMode === 'login' && (
+              <div className="text-right">
+                <button 
+                  type="button" 
+                  onClick={() => setAuthMode('forgotPassword')} 
+                  className="text-xs font-extrabold opacity-70 hover:opacity-100 transition-opacity" 
+                  style={{ color: themePrimary }}
+                >
+                  {t('forgotPasswordLink', 'Şifremi Unuttum?')}
+                </button>
+              </div>
+            )}
+
+            <button type="submit" className="w-full mt-2 py-4 rounded-2xl bg-white hover:bg-white/90 font-black active:scale-95 transition-all flex items-center justify-center gap-2 shadow-sm border border-white/80" style={{ color: themePrimary }}>
+              {authMode === 'login' && t('loginBtn', 'Giriş Yap')}
+              {authMode === 'register' && t('registerBtn', 'Kayıt Ol')}
+              {authMode === 'forgotPassword' && t('sendResetLink', 'Bağlantı Gönder')}
+              <ArrowRight size={20} strokeWidth={2.5} />
+            </button>
+          </form>
+
+          <div className="mt-6 text-center">
+            {/* Alt Yönlendirme Linkleri */}
+            {authMode === 'forgotPassword' ? (
+               <button onClick={() => setAuthMode('login')} className="text-sm font-extrabold opacity-80 hover:opacity-100 transition-opacity" style={{ color: themePrimary }}>
+                 {t('backToLogin', 'Giriş Ekranına Dön')}
+               </button>
+            ) : (
+              <button onClick={() => setAuthMode(authMode === 'login' ? 'register' : 'login')} className="text-sm font-extrabold opacity-80 hover:opacity-100 transition-opacity" style={{ color: themePrimary }}>
+                {authMode === 'login' ? t('switchToRegister', 'Hesabın yok mu? Kayıt Ol') : t('switchToLogin', 'Zaten hesabın var mı? Giriş Yap')}
+              </button>
+            )}
           </div>
         </div>
+      ) : (
+        <div className="w-full bg-white/40 backdrop-blur-xl rounded-[2.5rem] p-8 border border-white/60 shadow-[0_8px_30px_rgb(0,0,0,0.04)] flex flex-col items-center">
+          <div className="relative mb-6 group cursor-pointer" onClick={handleImageClick}>
+            <div className="w-32 h-32 rounded-full border-4 border-white shadow-lg overflow-hidden bg-white/50 relative">
+              <img src={profilePic} alt="Profil" className="w-full h-full object-cover" />
+              <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300">
+                <Camera size={28} color="white" />
+              </div>
+            </div>
+            <input type="file" accept="image/*" ref={fileInputRef} onChange={handleImageChange} className="hidden" />
+          </div>
 
-        {/* Hedef Alanı */}
-        <div className="space-y-2">
-          <label className="flex items-center gap-2 text-sm font-extrabold opacity-80">
-            <Target size={16} color={themePrimary} /> {t('goalLabel', 'Ana Hedef')}
-          </label>
-          <select 
-            value={goal}
-            onChange={(e) => setGoal(e.target.value)}
-            className="w-full bg-white/60 border border-white/80 rounded-xl px-4 py-3 font-bold focus:outline-none transition-all shadow-inner appearance-none"
-          >
-            <option value="Kilo Verme">{t('goalLoseWeight', 'Kilo Verme (Definisyon)')}</option>
-            <option value="Kas Kazanımı">{t('goalGainMuscle', 'Kas Kazanımı (Bulk)')}</option>
-            <option value="Vücut Kompozisyonu">{t('goalRecomposition', 'Vücut Kompozisyonu')}</option>
-          </select>
+          {!isEditing ? (
+            <div className="w-full flex flex-col items-center text-center animate-in fade-in">
+              <h2 className="text-2xl font-black tracking-tight mb-1">{name}</h2>
+              <p className="text-sm font-bold opacity-70 mb-6">{email}</p>
+
+              <div className="flex gap-4 mb-8 bg-white/30 px-6 py-4 rounded-2xl border border-white/40 justify-center w-full">
+                <div className="text-center w-1/3">
+                  <p className="text-xs font-bold opacity-60">{t('height', 'BOY')}</p>
+                  <p className="font-black text-lg">{height || '-'}</p>
+                </div>
+                <div className="text-center border-l border-white/40 w-1/3">
+                  <p className="text-xs font-bold opacity-60">{t('weight', 'KİLO')}</p>
+                  <p className="font-black text-lg">{weight || '-'}</p>
+                </div>
+                <div className="text-center border-l border-white/40 w-1/3">
+                  <p className="text-xs font-bold opacity-60">{t('age', 'YAŞ')}</p>
+                  <p className="font-black text-lg">{age || '-'}</p>
+                </div>
+              </div>
+
+              <div className="w-full space-y-3">
+                <button onClick={() => setIsEditing(true)} className="w-full bg-white/60 hover:bg-white p-4 rounded-2xl font-extrabold text-sm transition-all border border-white/80 shadow-sm flex items-center justify-between" style={{ color: themePrimary }}>
+                  <span>{t('editProfile', 'Profili Düzenle')}</span>
+                  <Edit3 size={18} />
+                </button>
+                <button onClick={handleLogout} className="w-full bg-red-500/10 hover:bg-red-500/20 text-red-600 p-4 rounded-2xl font-extrabold text-sm transition-all border border-red-500/20 shadow-sm flex items-center justify-between">
+                  <span>{t('logout', 'Çıkış Yap')}</span>
+                  <LogOut size={18} />
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="w-full space-y-4 animate-in slide-in-from-bottom-2 fade-in">
+              <div className="space-y-1 text-left">
+                <label className="text-xs font-extrabold opacity-70 ml-1">{t('nameLabel', 'Ad Soyad')}</label>
+                <div className="relative">
+                  <User size={18} className="absolute left-4 top-1/2 -translate-y-1/2 opacity-50" color={themePrimary} />
+                  <input type="text" value={name} onChange={(e) => setName(e.target.value)} className="w-full bg-white/60 border border-white/80 rounded-2xl pl-11 pr-4 py-3 font-bold focus:outline-none focus:ring-2 transition-all shadow-inner" style={{ '--tw-ring-color': themePrimary } as React.CSSProperties} />
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-3 gap-3 text-left">
+                <div className="space-y-1">
+                  <label className="text-xs font-extrabold opacity-70 ml-1">{t('heightLabel', 'Boy')}</label>
+                  <div className="relative">
+                    <Ruler size={16} className="absolute left-3 top-1/2 -translate-y-1/2 opacity-50" color={themePrimary} />
+                    <input type="number" value={height} onChange={(e) => setHeight(e.target.value)} className="w-full bg-white/60 border border-white/80 rounded-2xl pl-9 pr-2 py-3 font-bold focus:outline-none focus:ring-2 transition-all shadow-inner" style={{ '--tw-ring-color': themePrimary } as React.CSSProperties} />
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-extrabold opacity-70 ml-1">{t('weightLabel', 'Kilo')}</label>
+                  <div className="relative">
+                    <Weight size={16} className="absolute left-3 top-1/2 -translate-y-1/2 opacity-50" color={themePrimary} />
+                    <input type="number" value={weight} onChange={(e) => setWeight(e.target.value)} className="w-full bg-white/60 border border-white/80 rounded-2xl pl-9 pr-2 py-3 font-bold focus:outline-none focus:ring-2 transition-all shadow-inner" style={{ '--tw-ring-color': themePrimary } as React.CSSProperties} />
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-extrabold opacity-70 ml-1">{t('ageLabel', 'Yaş')}</label>
+                  <div className="relative">
+                    <Calendar size={16} className="absolute left-3 top-1/2 -translate-y-1/2 opacity-50" color={themePrimary} />
+                    <input type="number" value={age} onChange={(e) => setAge(e.target.value)} className="w-full bg-white/60 border border-white/80 rounded-2xl pl-9 pr-2 py-3 font-bold focus:outline-none focus:ring-2 transition-all shadow-inner" style={{ '--tw-ring-color': themePrimary } as React.CSSProperties} />
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-1 text-left">
+                <label className="text-xs font-extrabold opacity-70 ml-1">{t('goalLabel', 'Ana Hedef')}</label>
+                <div className="relative">
+                  <Target size={18} className="absolute left-4 top-1/2 -translate-y-1/2 opacity-50" color={themePrimary} />
+                  <select value={goal} onChange={(e) => setGoal(e.target.value)} className="w-full bg-white/60 border border-white/80 rounded-2xl pl-11 pr-4 py-3 font-bold focus:outline-none focus:ring-2 transition-all shadow-inner appearance-none">
+                    <option value="Kilo Verme">{t('goalLoseWeight', 'Kilo Verme (Definisyon)')}</option>
+                    <option value="Kas Kazanımı">{t('goalGainMuscle', 'Kas Kazanımı (Bulk)')}</option>
+                    <option value="Vücut Kompozisyonu">{t('goalRecomposition', 'Vücut Kompozisyonu')}</option>
+                  </select>
+                </div>
+              </div>
+              <button onClick={handleSaveProfile} className="w-full mt-2 py-4 rounded-2xl bg-white hover:bg-white/90 font-black active:scale-95 transition-all flex items-center justify-center gap-2 shadow-sm border border-white/80" style={{ color: themePrimary }}>
+                <Save size={20} strokeWidth={2.5} /> {t('saveProfileBtn', 'Profili Güncelle')}
+              </button>
+            </div>
+          )}
         </div>
-
-        {/* Kaydet Butonu */}
-        <button 
-          onClick={handleSave}
-          className="w-full mt-4 py-4 rounded-xl bg-white hover:bg-white/90 font-extrabold active:scale-95 transition-all flex items-center justify-center gap-2 shadow-sm border border-white/80"
-          style={{ color: themePrimary }}
-        >
-          <Save size={20} strokeWidth={2.5} /> {t('saveProfileBtn', 'Profili Güncelle')}
-        </button>
-
-      </div>
+      )}
     </div>
   );
 }
