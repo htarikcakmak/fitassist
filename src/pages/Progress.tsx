@@ -2,6 +2,8 @@ import { useState, useEffect, useContext } from 'react';
 import { LineChart as LineChartIcon, Plus, Trash2, Calendar as CalendarIcon } from 'lucide-react';
 import { ThemeContext } from '../context/ThemeContext';
 import { useTranslation } from 'react-i18next';
+// YENİ: Bildirim sistemimizi içe aktarıyoruz
+import { ToastContext } from '../context/ToastContext';
 
 // Gelen verinin yapısı
 interface ProgressRecord {
@@ -13,6 +15,9 @@ interface ProgressRecord {
 export default function Progress() {
   const { themePrimary } = useContext(ThemeContext);
   const { t, i18n } = useTranslation();
+  
+  // YENİ: showToast fonksiyonumuzu çağırıyoruz
+  const { showToast } = useContext(ToastContext);
 
   const [progressData, setProgressData] = useState<ProgressRecord[]>([]);
   const [weight, setWeight] = useState<number | ''>('');
@@ -41,8 +46,9 @@ export default function Progress() {
   };
 
   const handleSave = async () => {
+    // DÜZELTME: Çirkin alert yerine şık hata bildirimi (Toast)
     if (!weight || weight <= 0) {
-      alert(t('enterValue', 'Değer girin...'));
+      showToast(t('enterValue', 'Lütfen geçerli bir değer girin!'), 'error');
       return;
     }
 
@@ -56,13 +62,20 @@ export default function Progress() {
       if (res.ok) {
         setWeight(''); 
         fetchProgressData(); 
+        // YENİ: Başarıyla kaydedildiğinde yeşil Toast mesajı
+        showToast(t('successSaved', 'Başarıyla kaydedildi!'), 'success');
+      } else {
+        showToast(t('serverError', 'Kayıt işlemi başarısız oldu.'), 'error');
       }
     } catch (err) {
       console.error("Kilo eklenirken hata:", err);
+      // DÜZELTME: Sunucu hatası bildirimi
+      showToast(t('serverError', 'Sunucuya bağlanılamadı!'), 'error');
     }
   };
 
   const handleDelete = async (id: number) => {
+    // Silme onayı penceresi (Silme güvenliği için tarayıcı onayı olarak kalması idealdir)
     if (!window.confirm("Bu ölçüm kaydını silmek istediğinize emin misiniz?")) return;
 
     try {
@@ -72,11 +85,15 @@ export default function Progress() {
 
       if (res.ok) {
         setProgressData(prevData => prevData.filter(record => record.id !== id));
+        // YENİ: Başarılı silme bildirimi
+        showToast(t('successSaved', 'Başarıyla silindi!'), 'success');
       } else {
-        alert("Silme işlemi başarısız oldu.");
+        // DÜZELTME: Çirkin alert yerine şık hata bildirimi
+        showToast(t('serverError', 'Silme işlemi başarısız oldu.'), 'error');
       }
     } catch (err) {
       console.error("Kilo kaydı silinirken hata:", err);
+      showToast(t('serverError', 'Sunucu hatası!'), 'error');
     }
   };
 

@@ -4,6 +4,8 @@ import { ThemeContext } from '../context/ThemeContext';
 import { FOOD_LIBRARY } from '../data/foodLibrary';
 import type { FoodItem } from '../data/foodLibrary';
 import { useTranslation } from 'react-i18next'; 
+// YENİ: Bildirim (Toast) sistemimizi içe aktarıyoruz
+import { ToastContext } from '../context/ToastContext';
 
 type MealsState = { [key: string]: FoodItem[] };
 
@@ -19,6 +21,9 @@ export default function Nutrition() {
 
   const { themeBg, themePrimary } = useContext(ThemeContext);
   const { t, i18n } = useTranslation();
+  
+  // YENİ: showToast fonksiyonumuzu başlatıyoruz
+  const { showToast } = useContext(ToastContext);
 
   // --- DİNAMİK GRAFİK HESAPLAMALARI ---
   const todayMacros = { p: 0, c: 0, f: 0 };
@@ -113,10 +118,13 @@ export default function Nutrition() {
       const foodWithRealId = { ...calculatedFood, id: addedFoodId?.toString() || calculatedFood.id };
       setMeals(prev => ({ ...prev, [modalData.mealType]: [...prev[modalData.mealType], foodWithRealId] }));
       closeModal();
+      // YENİ: Başarılı ekleme bildirimi
+      showToast(t('successSaved', 'Başarıyla eklendi!'), 'success');
     })
     .catch(err => {
       console.error("Besin ekleme hatası:", err);
-      alert(err.message);
+      // DÜZELTME: Çirkin alert yerine Toast bildirimi
+      showToast(t('serverError', 'Sunucuya bağlanılamadı!'), 'error');
     });
   };
 
@@ -134,11 +142,15 @@ export default function Nutrition() {
           ...prev,
           [mealName]: prev[mealName].filter(food => food.id !== foodId)
         }));
+        // YENİ: Başarılı silme bildirimi
+        showToast(t('successSaved', 'Başarıyla silindi!'), 'success');
       } else {
-        alert("Besin silinemedi. Lütfen tekrar deneyin.");
+        // DÜZELTME: Çirkin alert yerine Toast bildirimi
+        showToast(t('serverError', 'Besin silinemedi. Lütfen tekrar deneyin.'), 'error');
       }
     } catch (err) {
       console.error("Besin silinirken hata:", err);
+      showToast(t('serverError', 'Sunucu hatası!'), 'error');
     }
   };
 
@@ -194,17 +206,13 @@ export default function Nutrition() {
                   {foods.map((food, i) => (
                     <div key={i} className="flex flex-col gap-2 bg-white/60 border border-white/80 p-4 rounded-xl shadow-sm">
                       
-                      {/* DÜZELTME: SİLME BUTONU VE BAŞLIK TASARIMI */}
                       <div className="flex justify-between items-start border-b border-white/50 pb-2 mb-1 gap-2">
-                        {/* Soldaki görünmez boşluk: Metnin sağdaki butona rağmen tam ortalanmasını sağlar */}
                         <div className="w-8 shrink-0"></div>
                         
-                        {/* Yiyecek İsmi: Satır atladığında ezilmemesi için leading-snug eklendi */}
                         <span className="text-sm font-extrabold text-center flex-1 leading-snug self-center">
                           {food.name}
                         </span>
                         
-                        {/* Silme Butonu: absolute kaldırıldı, shrink-0 ile küçülerek ezilmesi engellendi */}
                         <button 
                           onClick={() => handleDeleteFood(mealName, food.id)}
                           className="p-1.5 text-red-400 hover:bg-red-500/10 hover:text-red-600 rounded-lg transition-all shrink-0 self-center"

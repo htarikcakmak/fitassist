@@ -1,133 +1,276 @@
 import { useState, useEffect, useContext } from 'react';
-import { Droplets, Plus, GlassWater, Check, Pencil } from 'lucide-react';
+import { Droplet, Plus, Trash2, BarChart3, Edit3 } from 'lucide-react';
 import { ThemeContext } from '../context/ThemeContext';
-import { useTranslation } from 'react-i18next'; 
+import { useTranslation } from 'react-i18next';
+import { ToastContext } from '../context/ToastContext';
 
-export default function WaterTracker() {
-  const [water, setWater] = useState(0);
-  const [target, setTarget] = useState(3000);
-  const [isEditing, setIsEditing] = useState(false);
-  const [tempTarget, setTempTarget] = useState('3000');
+interface WaterRecord {
+  id: number;
+  amount: number;
+  date: string;
+}
+
+export default function Water() {
   const { themePrimary } = useContext(ThemeContext);
-
-  // Çeviri fonksiyonunu ve mevcut dili aktifleştiriyoruz
   const { t, i18n } = useTranslation();
+  
+  const { showToast } = useContext(ToastContext);
 
-  // 1. ADIM: Sayfa yüklendiğinde Spring Boot'tan bugünün verisini çek
+  const [waterData, setWaterData] = useState<WaterRecord[]>([]);
+  const [amount, setAmount] = useState<number | ''>('');
+  
+  const [dailyGoal, setDailyGoal] = useState<number>(() => {
+    const saved = localStorage.getItem('dailyWaterGoal');
+    return saved ? Number(saved) : 2500;
+  });
+
   useEffect(() => {
-    fetch('http://localhost:8080/api/water/today')
-      .then(res => res.json())
-      .then(data => {
-        // YENİ: Eski verileri engellemek için tarih kontrolü (Bugünün tarihini alıyoruz)
-        const todayString = new Date().toISOString().split('T')[0];
-        
-        // Eğer gelen veride tarih varsa ve bu tarih BUGÜN değilse (eski veriyse), değerleri sıfır kabul et
-        if (data.date && !data.date.startsWith(todayString)) {
-          setWater(0);
-          setTarget(3000);
-          setTempTarget('3000');
-        } else {
-          // Veri bugüne aitse normal şekilde ekrana yansıt
-          setWater(data.consumedAmount || 0);
-          setTarget(data.targetAmount || 3000);
-          setTempTarget((data.targetAmount || 3000).toString());
-        }
-      })
-      .catch(err => console.error("Veritabanına bağlanılamadı:", err));
+    fetchWaterData();
   }, []);
 
-  // 2. ADIM: Su veya hedef değiştiğinde bunu veritabanına (Spring Boot) gönder
-  const updateDatabase = (newWater: number, newTarget: number) => {
-    fetch('http://localhost:8080/api/water/update', {
-      method: 'POST',
-      headers: { 
-        'Content-Type': 'application/json',
-        'Accept-Language': i18n.language || 'tr'
-      },
-      body: JSON.stringify({ consumedAmount: newWater, targetAmount: newTarget })
-    })
-    .then(async (res) => {
-      const responsePayload = await res.json();
-      
-      if (!res.ok) {
-        throw new Error(responsePayload.message || 'Sunucu hatası');
+  const fetchWaterData = async () => {
+    try {
+      const res = await fetch('http://localhost:8080/api/water/all');
+      if (res.ok) {
+        const data = await res.json();
+        const sortedData = data.sort((a: WaterRecord, b: WaterRecord) => b.id - a.id);
+        setWaterData(sortedData);
       }
-      return responsePayload;
-    })
-    .then(responsePayload => {
-      console.log(responsePayload.message);
-    })
-    .catch(err => {
-      console.error("Veri kaydedilemedi:", err);
-      alert(err.message);
-    });
-  };
-
-  const addWater = (amount: number) => {
-    const newWater = water + amount;
-    setWater(newWater);
-    updateDatabase(newWater, target);
-  };
-
-  const handleTargetSave = () => {
-    const newTarget = parseInt(tempTarget);
-    if (!isNaN(newTarget) && newTarget > 0) {
-      setTarget(newTarget);
-      updateDatabase(water, newTarget);
+    } catch (err) {
+      console.error("Fetch error:", err);
     }
-    setIsEditing(false);
   };
 
-  const resetWater = () => {
-    setWater(0);
-    updateDatabase(0, target);
+  const handleSave = async (quickAmount?: number) => {
+    const valueToAdd = quickAmount || Number(amount);
+    
+    if (!valueToAdd || valueToAdd <= 0) {
+      showToast(t('alertEnterValidAmount', 'Lütfen geçerli bir miktar girin!'), 'error');
+      return;
+    }
+
+    const today = new Date().toISOString().split('T')[0];
+
+    try {
+      const res = await fetch('http://localhost:8080/api/water/add', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ amount: valueToAdd, date: today })
+      });
+
+      if (res.ok) {
+        setAmount(''); 
+        fetchWaterData(); 
+        showToast(t('successSaved', 'Başarıyla eklendi!'), 'success');
+      } else {
+        showToast(t('serverError', 'Kayıt işlemi başarısız oldu.'), 'error');
+      }
+    } catch (err) {
+      console.error("Add error:", err);
+      showToast(t('serverError', 'Sunucuya bağlanılamadı!'), 'error');
+    }
   };
 
-  // 3. ADIM: Dizi içeriye alındı ve çeviri fonksiyonu (t) uygulandı
-  const waterOptions = [
-    { amount: 250, label: `1 ${t('glasses', 'Bardak')}`, glasses: 1 },
-    { amount: 500, label: `2 ${t('glasses', 'Bardak')}`, glasses: 2 },
-    { amount: 750, label: `3 ${t('glasses', 'Bardak')}`, glasses: 3 },
-    { amount: 1000, label: `1 ${t('bottle', 'Şişe')}`, glasses: 0 }
-  ];
+  const handleDelete = async (id: number) => {
+    if (!window.confirm("Bu su kaydını silmek istediğinize emin misiniz?")) return;
+
+    try {
+      const res = await fetch(`http://localhost:8080/api/water/delete/${id}`, {
+        method: 'DELETE'
+      });
+
+      if (res.ok) {
+        setWaterData(prevData => prevData.filter(record => record.id !== id));
+        showToast(t('successSaved', 'Başarıyla silindi!'), 'success');
+      } else {
+        showToast(t('serverError', 'Silme işlemi başarısız oldu. Lütfen tekrar deneyin.'), 'error');
+      }
+    } catch (err) {
+      console.error("Delete error:", err);
+      showToast(t('serverError', 'Sunucuya bağlanılamadı!'), 'error');
+    }
+  };
+
+  const handleGoalChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = Number(e.target.value);
+    setDailyGoal(val);
+    localStorage.setItem('dailyWaterGoal', val.toString());
+  };
+
+  const todayString = new Date().toISOString().split('T')[0];
+  const todaysRecords = waterData.filter(r => r.date === todayString);
+  const totalWaterToday = todaysRecords.reduce((sum, record) => sum + record.amount, 0);
+  
+  const progressPercent = dailyGoal > 0 ? Math.min((totalWaterToday / dailyGoal) * 100, 100) : 0;
+
+  const last7Days = Array.from({ length: 7 }).map((_, i) => {
+    const d = new Date();
+    d.setDate(d.getDate() - (6 - i));
+    return d.toISOString().split('T')[0];
+  });
+
+  const weeklyChartData = last7Days.map(dateStr => {
+    const dailyTotal = waterData
+      .filter(r => r.date === dateStr)
+      .reduce((sum, r) => sum + r.amount, 0);
+    const dateObj = new Date(dateStr);
+    const dayName = dateObj.toLocaleDateString(i18n.language || 'tr', { weekday: 'short' });
+    return { date: dateStr, dayName, total: dailyTotal };
+  });
 
   return (
-    <div className="p-6 md:p-10 space-y-10 pb-32 md:pb-10 max-w-3xl mx-auto animate-in fade-in duration-500 flex flex-col items-center">
-      <div className="w-full text-center md:text-left">
-        <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight mb-1">{t('waterTitle', 'Su Takibi')}</h1>
+    <div className="p-6 md:p-10 space-y-6 pb-32 md:pb-10 max-w-5xl mx-auto animate-in fade-in duration-500">
+      
+      <div className="flex items-center gap-3 mb-8">
+        <Droplet size={36} strokeWidth={2.5} style={{ color: themePrimary }} />
+        <div>
+          <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight mb-1" style={{ color: themePrimary }}>
+            {t('waterTitle', 'Su Takibi')}
+          </h1>
+          <p className="font-extrabold opacity-80">{t('waterDesc', 'Günlük su tüketimini takip et.')}</p>
+        </div>
       </div>
-      <div className="relative w-64 h-64 md:w-80 md:h-80 rounded-full bg-white/40 backdrop-blur-xl border border-white/60 flex flex-col items-center justify-center overflow-hidden shadow-lg">
-        <div className="relative z-10 flex flex-col items-center">
-          <Droplets size={56} className="mb-2 opacity-80" strokeWidth={1.5} color={themePrimary} />
-          <span className="text-5xl md:text-6xl font-black tracking-tighter">{water}</span>
-          <div className="mt-2 flex items-center justify-center h-8">
-            <span className="text-sm md:text-lg font-bold opacity-70 mr-2">/</span>
-            {isEditing ? (
-              <div className="flex items-center gap-2">
-                <input type="number" value={tempTarget} onChange={(e) => setTempTarget(e.target.value)} className="w-20 bg-white/60 border rounded-lg px-2 py-1 text-center text-sm font-bold focus:outline-none" style={{borderColor: themePrimary}} autoFocus />
-                <button onClick={handleTargetSave} className="p-1.5 bg-white rounded-lg shadow-sm"><Check size={16} strokeWidth={3} color={themePrimary}/></button>
+
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        
+        <div className="lg:col-span-7 space-y-6">
+          
+          <div className="bg-white/40 backdrop-blur-xl rounded-[2rem] p-6 shadow-sm border border-white/60">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end mb-4 gap-4">
+              <h3 className="text-xl font-extrabold" style={{ color: themePrimary }}>{t('dailyGoal', 'Günlük Hedef')}</h3>
+              
+              <div className="flex items-center justify-between w-full sm:w-fit gap-1.5 bg-white/60 px-4 py-2 rounded-xl border border-white/80 focus-within:border-blue-400 transition-all">
+                <span className="font-black text-2xl whitespace-nowrap">{totalWaterToday} /</span>
+                
+                {/* DÜZELTME: Okları gizleyen Tailwind CSS sınıfları eklendi */}
+                <input 
+                  type="number" 
+                  value={dailyGoal || ''}
+                  onChange={handleGoalChange}
+                  className="w-full max-w-[5rem] font-black text-2xl bg-transparent focus:outline-none text-center [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                  style={{ color: themePrimary }}
+                />
+                
+                <span className="font-bold opacity-60 text-sm whitespace-nowrap ml-1">ml</span>
+                <Edit3 size={16} className="opacity-40 shrink-0 ml-1" />
               </div>
-            ) : (
-              <div className="flex items-center gap-2 group cursor-pointer" onClick={() => setIsEditing(true)}>
-                <span className="text-sm md:text-lg font-bold opacity-70">{target} ml</span>
-                <button className="opacity-50 group-hover:opacity-100 transition-opacity"><Pencil size={14} color={themePrimary}/></button>
+            </div>
+            
+            <div className="w-full h-10 bg-white/50 rounded-2xl overflow-hidden shadow-inner border border-white/80 relative">
+              <div 
+                className="h-full transition-all duration-1000 ease-out flex items-center justify-end pr-4"
+                style={{ width: `${progressPercent}%`, backgroundColor: themePrimary }}
+              >
+                {progressPercent >= 20 && <span className="text-white font-black text-xs drop-shadow-md">%{Math.round(progressPercent)}</span>}
               </div>
-            )}
+            </div>
+          </div>
+
+          <div className="bg-white/40 backdrop-blur-xl rounded-[2rem] p-6 shadow-sm border border-white/60">
+            <h3 className="text-lg font-extrabold mb-5" style={{ color: themePrimary }}>{t('addWater', 'Su Ekle')}</h3>
+            
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+              <button onClick={() => handleSave(250)} className="py-4 bg-white/60 hover:bg-white rounded-2xl border border-white/80 active:scale-95 transition-all shadow-sm flex flex-col items-center gap-2 group">
+                <div className="p-3 bg-blue-100 rounded-full group-hover:bg-blue-200 transition-colors"><Droplet size={20} className="text-blue-500" fill="currentColor" /></div>
+                <div className="flex flex-col items-center"><span className="text-sm font-black">{t('customAmount', '1 Bardak')}</span><span className="text-[10px] font-bold opacity-60">250 ml</span></div>
+              </button>
+              
+              <button onClick={() => handleSave(500)} className="py-4 bg-white/60 hover:bg-white rounded-2xl border border-white/80 active:scale-95 transition-all shadow-sm flex flex-col items-center gap-2 group">
+                <div className="p-3 bg-blue-100 rounded-full group-hover:bg-blue-200 transition-colors"><Droplet size={24} className="text-blue-500" fill="currentColor" /></div>
+                <div className="flex flex-col items-center"><span className="text-sm font-black">{t('customAmount', '2 Bardak')}</span><span className="text-[10px] font-bold opacity-60">500 ml</span></div>
+              </button>
+
+              <button onClick={() => handleSave(750)} className="py-4 bg-white/60 hover:bg-white rounded-2xl border border-white/80 active:scale-95 transition-all shadow-sm flex flex-col items-center gap-2 group">
+                <div className="p-3 bg-blue-100 rounded-full group-hover:bg-blue-200 transition-colors"><Droplet size={28} className="text-blue-500" fill="currentColor" /></div>
+                <div className="flex flex-col items-center"><span className="text-sm font-black">{t('customAmount', '3 Bardak')}</span><span className="text-[10px] font-bold opacity-60">750 ml</span></div>
+              </button>
+
+              <button onClick={() => handleSave(1000)} className="py-4 bg-white/60 hover:bg-white rounded-2xl border border-white/80 active:scale-95 transition-all shadow-sm flex flex-col items-center gap-2 group">
+                <div className="p-3 bg-blue-100 rounded-full group-hover:bg-blue-200 transition-colors"><Droplet size={32} className="text-blue-500" fill="currentColor" /></div>
+                <div className="flex flex-col items-center"><span className="text-sm font-black">{t('customAmount', '1 Şişe')}</span><span className="text-[10px] font-bold opacity-60">1000 ml</span></div>
+              </button>
+            </div>
+
+            <div className="flex gap-2">
+              {/* DÜZELTME: Okları gizleyen Tailwind CSS sınıfları eklendi */}
+              <input 
+                type="number" 
+                value={amount}
+                onChange={(e) => setAmount(Number(e.target.value) || '')}
+                placeholder="Özel miktar (Örn: 300)"
+                className="w-full bg-white border border-white/80 rounded-xl px-4 py-3 font-black focus:outline-none transition-all shadow-inner [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+              />
+              <button 
+                onClick={() => handleSave()}
+                className="px-6 rounded-xl bg-white hover:bg-white/90 border border-white/80 font-black active:scale-95 transition-all shadow-sm flex items-center justify-center"
+                style={{ color: themePrimary }}
+              >
+                <Plus size={24} />
+              </button>
+            </div>
           </div>
         </div>
-      </div>
-      <div className="w-full bg-white/40 backdrop-blur-xl rounded-[2.5rem] p-6 md:p-8 shadow-sm border border-white/60">
-        <div className="grid grid-cols-2 gap-4">
-          {waterOptions.map(option => (
-            <button key={option.amount} onClick={() => addWater(option.amount)} className="bg-white/60 hover:bg-white border border-white/80 py-4 px-2 rounded-2xl active:scale-95 transition-all flex flex-col items-center justify-center shadow-sm">
-              <div className="flex items-center space-x-1 mb-1"><Plus size={16} strokeWidth={3} /><span className="text-lg font-extrabold">{option.amount} ml</span></div>
-              <div className="flex items-center gap-1 opacity-70"><span className="text-xs font-bold mr-1">{option.label}</span>
-                <div className="flex gap-0.5">{option.glasses > 0 ? Array.from({ length: option.glasses }).map((_, i) => <GlassWater key={i} size={14} strokeWidth={2.5} />) : <Droplets size={14} strokeWidth={2.5} />}</div>
-              </div>
-            </button>
-          ))}
+
+        <div className="lg:col-span-5 space-y-6">
+          <div className="bg-white/40 backdrop-blur-xl rounded-[2rem] p-6 shadow-sm border border-white/60">
+            <div className="flex items-center gap-2 mb-6">
+              <BarChart3 size={20} style={{ color: themePrimary }} />
+              <h3 className="text-lg font-extrabold" style={{ color: themePrimary }}>{t('weeklyAnalysis', 'Haftalık Analiz')}</h3>
+            </div>
+            
+            <div className="flex items-end justify-between h-40 gap-2 border-b border-black/10 pb-2">
+              {weeklyChartData.map((day, idx) => {
+                const heightPercent = dailyGoal > 0 ? Math.min((day.total / dailyGoal) * 100, 100) : 0;
+                const isToday = day.date === todayString;
+                
+                return (
+                  <div key={idx} className="flex flex-col items-center flex-1">
+                    <span className="text-[10px] font-bold opacity-60 mb-1" title={`${day.total} ml`}>
+                      {day.total > 0 ? `${(day.total/1000).toFixed(1)}L` : ''}
+                    </span>
+                    <div className="w-full max-w-[2rem] h-28 flex flex-col justify-end">
+                      <div 
+                        className={`w-full rounded-md transition-all duration-700 ease-out ${isToday ? 'bg-blue-500 shadow-md' : 'bg-blue-300 opacity-70'}`}
+                        style={{ height: `${heightPercent}%`, minHeight: day.total > 0 ? '10%' : '0%' }}
+                      ></div>
+                    </div>
+                    <span className={`mt-2 text-[10px] uppercase font-black ${isToday ? 'text-blue-600' : 'opacity-50'}`}>
+                      {day.dayName}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="bg-white/40 backdrop-blur-xl rounded-[2rem] p-6 shadow-sm border border-white/60">
+            <h4 className="font-extrabold opacity-80 mb-4">{t('todayRecords', 'Bugünkü Kayıtlar')}</h4>
+            <div className="space-y-3 max-h-48 overflow-y-auto pr-2 no-scrollbar">
+              {todaysRecords.length > 0 ? (
+                todaysRecords.map((record) => (
+                  <div key={record.id} className="flex items-center justify-between bg-white/60 p-4 rounded-2xl border border-white/80 shadow-sm transition-all hover:bg-white/80">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-blue-100 rounded-full shadow-sm">
+                        <Droplet size={18} className="text-blue-500" fill="currentColor" />
+                      </div>
+                      <p className="font-extrabold text-lg">{record.amount} ml</p>
+                    </div>
+                    <button 
+                      onClick={() => handleDelete(record.id)}
+                      className="p-3 bg-red-500/10 hover:bg-red-500/20 rounded-xl text-red-600 active:scale-90 transition-all shrink-0"
+                    >
+                      <Trash2 size={18} />
+                    </button>
+                  </div>
+                ))
+              ) : (
+                <div className="text-center py-6 opacity-60">
+                  <p className="font-bold">{t('noWaterData', 'Bugün hiç su kaydı eklemedin.')}</p>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
-        <button onClick={resetWater} className="w-full mt-6 py-4 rounded-2xl bg-white/30 hover:bg-white/50 font-extrabold active:scale-95 transition-all border border-white/40 shadow-sm">{t('resetBtn', 'Sıfırla')}</button>
       </div>
     </div>
   );

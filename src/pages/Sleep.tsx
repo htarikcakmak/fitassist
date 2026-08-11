@@ -3,6 +3,8 @@ import { Plus, Moon, CalendarDays, ChevronDown, ChevronUp } from 'lucide-react';
 import { ThemeContext } from '../context/ThemeContext';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Cell } from 'recharts';
 import { useTranslation } from 'react-i18next';
+// YENİ: Bildirim sistemimizi içe aktarıyoruz
+import { ToastContext } from '../context/ToastContext';
 
 type SleepLog = {
   id?: number;
@@ -22,23 +24,20 @@ export default function Sleep() {
   
   const { themeBg, themePrimary } = useContext(ThemeContext);
   
-  // Çeviri fonksiyonunu ve mevcut dili aktifleştiriyoruz
   const { t, i18n } = useTranslation();
+  
+  // YENİ: showToast fonksiyonumuzu çağırıyoruz
+  const { showToast } = useContext(ToastContext);
 
   useEffect(() => {
     fetch('http://localhost:8080/api/sleep/all')
       .then(res => res.json())
       .then(data => {
         if(data && data.length > 0) {
-          
-          // YENİ: Eski ve bozuk tarihleri gizlemek için filtreleme yapıyoruz
           const cleanedData = data.filter((log: SleepLog) => {
-            // Sadece YYYY-MM-DD formatında olan standart tarihleri grafiğe kabul et
-            // Regex açıklaması: 4 rakam, tire, 2 rakam, tire, 2 rakam
             const isValidDate = /^\d{4}-\d{2}-\d{2}$/.test(log.date);
             return isValidDate;
           });
-
           setLogs(cleanedData);
         }
       })
@@ -47,11 +46,11 @@ export default function Sleep() {
 
   const handleSaveSleep = () => {
     if (!date || !hours) {
-      alert(t('alertEnterSleepTime', 'Lütfen uyku süresini gir!'));
+      // DÜZELTME: Çirkin alert yerine şık hata bildirimi (Toast)
+      showToast(t('alertEnterSleepTime', 'Lütfen uyku süresini gir!'), 'error');
       return;
     }
 
-    // Tarihi metin olarak değil, evrensel standartta (YYYY-MM-DD) bırakıyoruz
     const newLog = {
       date: date, 
       hours: parseFloat(hours)
@@ -73,7 +72,8 @@ export default function Sleep() {
       return responsePayload;
     })
     .then(responsePayload => {
-      alert(responsePayload.message);
+      // DÜZELTME: Çirkin alert yerine çoklu dil destekli şık başarı bildirimi (Toast)
+      showToast(t('successSaved', 'Başarıyla kaydedildi!'), 'success');
 
       setLogs([...logs, newLog]);
       setHours('');
@@ -82,7 +82,8 @@ export default function Sleep() {
     })
     .catch(err => {
       console.error("Uyku ekleme hatası:", err);
-      alert(err.message);
+      // DÜZELTME: Çirkin alert yerine şık hata bildirimi
+      showToast(t('serverError', 'Sunucuya bağlanılamadı!'), 'error');
     });
   };
 
@@ -92,12 +93,10 @@ export default function Sleep() {
     return '#ef4444'; 
   };
 
-  // Tarihleri seçili dile göre anlık olarak formatlayan fonksiyon
   const formatChartDate = (dateString: string) => {
     const d = new Date(dateString);
     if (isNaN(d.getTime())) return dateString; 
     
-    // Saf tarihi alıp anlık olarak aktif dile (i18n.language) çevirir
     return d.toLocaleDateString(i18n.language || 'tr', { day: '2-digit', month: 'short' });
   };
 

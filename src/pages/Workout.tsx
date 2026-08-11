@@ -1,181 +1,317 @@
 import { useState, useEffect, useContext } from 'react';
-import { Plus, Check } from 'lucide-react';
+import { Dumbbell, Plus, Trash2, History, CalendarCheck } from 'lucide-react';
 import { ThemeContext } from '../context/ThemeContext';
 import { useTranslation } from 'react-i18next';
-import i18n from '../i18n'; 
+// YENİ: Bildirim sistemimizi içe aktarıyoruz
+import { ToastContext } from '../context/ToastContext';
 
-type WorkoutLog = {
-  id?: number;
-  programType: string;
+interface WorkoutRecord {
+  id: number;
   exerciseName: string;
-  setNumber: number;
+  category: string; 
   weight: number;
+  sets: number;
   reps: number;
-  date?: string; 
-};
+  date: string;
+}
 
 export default function Workout() {
-  const [logs, setLogs] = useState<WorkoutLog[]>([]);
-  const [program, setProgram] = useState('Push');
-  const [exercise, setExercise] = useState('');
-  const [weight, setWeight] = useState('');
-  const [reps, setReps] = useState('');
-  const { themeBg, themePrimary } = useContext(ThemeContext);
+  const { themePrimary } = useContext(ThemeContext);
+  const { t, i18n } = useTranslation();
   
-  const { t } = useTranslation();
-  const programs = ['Push', 'Pull', 'Leg'];
+  // YENİ: showToast fonksiyonumuzu çağırıyoruz
+  const { showToast } = useContext(ToastContext);
 
-  // Bugünün saf (raw) tarihi (Örn: "2026-08-09")
-  const todayString = new Date().toISOString().split('T')[0];
+  const [workouts, setWorkouts] = useState<WorkoutRecord[]>([]);
+  const [exerciseName, setExerciseName] = useState('');
+  const [weight, setWeight] = useState<number | ''>('');
+  const [sets, setSets] = useState<number | ''>('');
+  const [reps, setReps] = useState<number | ''>('');
+  
+  const [category, setCategory] = useState<string>('Push');
+  const [activeTab, setActiveTab] = useState<'today' | 'history'>('today');
 
   useEffect(() => {
-    fetch('http://localhost:8080/api/workout/today')
-      .then(res => {
-        if (!res.ok) throw new Error("Bağlantı hatası");
-        return res.json();
-      })
-      .then((data: any[]) => {
-        // YENİ DÜZELTME: Filtreyi katılaştırdık. Eski ve tarihsiz veriler kesinlikle reddedilecek.
-        const cleanedData = data.filter((log) => {
-          // Eğer verinin tarihi yoksa (eski test verisi) doğrudan gizle
-          if (!log.date) return false;
-          
-          // Eğer tarihi varsa, sadece formata uyan ve BUGÜNE ait olanları göster
-          const isValidFormat = /^\d{4}-\d{2}-\d{2}/.test(log.date);
-          const isToday = log.date.startsWith(todayString);
-          
-          return isValidFormat && isToday;
-        });
-        
-        setLogs(cleanedData);
-      })
-      .catch(err => console.error("Antrenman verisi çekilemedi (Arka plan kapalı olabilir):", err));
+    fetchWorkouts();
   }, []);
 
-  const handleSaveSet = () => {
-    if (!exercise || !weight || !reps) {
-      alert(t('alertFillAll', 'Lütfen tüm alanları doldurun!'));
+  const fetchWorkouts = async () => {
+    try {
+      const res = await fetch('http://localhost:8080/api/workout/all');
+      if (res.ok) {
+        const data = await res.json();
+        const sortedData = data.sort((a: WorkoutRecord, b: WorkoutRecord) => b.id - a.id);
+        setWorkouts(sortedData);
+      }
+    } catch (err) {
+      console.error("Fetch error:", err);
+    }
+  };
+
+  const handleSave = async () => {
+    // DÜZELTME: Çirkin alert yerine şık Toast error mesajı
+    if (!exerciseName || weight === '' || sets === '' || reps === '' || !category) {
+      showToast(t('alertFillAll', 'Lütfen tüm alanları doldurun ve bir kategori seçin!'), 'error'); 
       return;
     }
 
-    const currentSets = logs.filter(log => log.exerciseName === exercise && log.programType === program).length;
-    
-    const newLog = {
-      programType: program,
-      exerciseName: exercise,
-      setNumber: currentSets + 1,
-      weight: parseFloat(weight),
-      reps: parseInt(reps),
-      date: todayString 
+    const payload = {
+      exerciseName,
+      category, 
+      weight: Number(weight),
+      sets: Number(sets),
+      reps: Number(reps)
     };
 
-    fetch('http://localhost:8080/api/workout/add', {
-      method: 'POST',
-      headers: { 
-        'Content-Type': 'application/json',
-        'Accept-Language': i18n.language || 'tr' 
-      },
-      body: JSON.stringify(newLog)
-    })
-    .then(async (res) => {
-      const responsePayload = await res.json();
-      
-      if (!res.ok) {
-        throw new Error(responsePayload.message || 'Sunucu hatası');
-      }
-      return responsePayload;
-    })
-    .then(responsePayload => {
-      alert(responsePayload.message);
+    try {
+      const res = await fetch('http://localhost:8080/api/workout/add', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
 
-      setLogs([...logs, newLog]);
-      setWeight('');
-      setReps('');
-    })
-    .catch(err => {
-      console.error("Set kaydedilemedi:", err);
-      alert(err.message);
-    });
+      if (res.ok) {
+        setExerciseName('');
+        setWeight('');
+        setSets('');
+        setReps('');
+        fetchWorkouts();
+        setActiveTab('today');
+        // YENİ: Başarıyla kaydedildiğinde yeşil Toast mesajı
+        showToast(t('successSaved', 'Başarıyla kaydedildi!'), 'success');
+      } else {
+        // DÜZELTME: Çirkin alert yerine şık Toast error mesajı
+        showToast(t('alertServerError', 'Kayıt başarısız! Sunucuyu kontrol edin.'), 'error');
+      }
+    } catch (err) {
+      console.error("Add error:", err);
+      showToast(t('serverError', 'Sunucuya bağlanılamadı!'), 'error');
+    }
   };
 
+  const handleDelete = async (id: number) => {
+    // Silme onayı penceresi (Şimdilik tarayıcı onayı olarak kalması silme güvenliği için iyidir)
+    if (!window.confirm("Bu antrenmanı silmek istediğine emin misin?")) return; 
+
+    try {
+      const res = await fetch(`http://localhost:8080/api/workout/delete/${id}`, {
+        method: 'DELETE'
+      });
+
+      if (res.ok) {
+        setWorkouts(prev => prev.filter(w => w.id !== id));
+        showToast(t('successSaved', 'Başarıyla silindi!'), 'success');
+      } else {
+        showToast(t('serverError', 'Silme işlemi başarısız oldu.'), 'error');
+      }
+    } catch (err) {
+      console.error("Delete error:", err);
+      showToast(t('serverError', 'Sunucu hatası!'), 'error');
+    }
+  };
+
+  const getCategoryColor = (cat: string) => {
+    switch (cat) {
+      case 'Push': return 'bg-blue-100 text-blue-700 border-blue-200';
+      case 'Pull': return 'bg-red-100 text-red-700 border-red-200';
+      case 'Leg': return 'bg-green-100 text-green-700 border-green-200';
+      default: return 'bg-gray-100 text-gray-700 border-gray-200';
+    }
+  };
+
+  const todayString = new Date().toISOString().split('T')[0];
+  const todaysWorkouts = workouts.filter(w => w.date === todayString);
+  const historyWorkouts = workouts.filter(w => w.date !== todayString);
+
+  const groupedHistory = historyWorkouts.reduce((acc, curr) => {
+    if (!acc[curr.date]) acc[curr.date] = [];
+    acc[curr.date].push(curr);
+    return acc;
+  }, {} as Record<string, WorkoutRecord[]>);
+
+  const sortedHistoryDates = Object.keys(groupedHistory).sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
+
   return (
-    <div className="p-6 md:p-10 space-y-8 pb-32 md:pb-10 max-w-5xl mx-auto animate-in fade-in duration-500">
-      <div>
-        <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight">{t('workoutTitle', 'Antrenman')}</h1>
-        <p className="font-medium opacity-80 mt-1">{t('workoutDesc', 'Hareketlerini ve setlerini takip et.')}</p>
+    <div className="p-6 md:p-10 space-y-6 pb-32 md:pb-10 max-w-5xl mx-auto animate-in fade-in duration-500">
+      
+      <div className="flex items-center gap-3 mb-8">
+        <Dumbbell size={36} strokeWidth={2.5} style={{ color: themePrimary }} />
+        <div>
+          <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight mb-1" style={{ color: themePrimary }}>
+            {t('workoutTitle', 'Antrenman')}
+          </h1>
+          <p className="font-extrabold opacity-80">{t('workoutDesc', 'Bugünkü programını seç ve setlerini kaydet.')}</p>
+        </div>
       </div>
 
-      <div className="flex gap-4 overflow-x-auto pb-2 no-scrollbar">
-        {programs.map((p) => (
-          <button 
-            key={p} 
-            onClick={() => setProgram(p)} 
-            style={{
-              backgroundColor: program === p ? themePrimary : 'rgba(255,255,255,0.4)',
-              color: program === p ? themeBg : themePrimary,
-              borderColor: program === p ? 'transparent' : 'rgba(255,255,255,0.6)'
-            }}
-            className="px-8 py-3 rounded-xl text-sm font-extrabold transition-all duration-300 active:scale-95 border backdrop-blur-md"
-          >
-            {p}
-          </button>
-        ))}
-      </div>
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        
+        {/* SOL PANEL */}
+        <div className="lg:col-span-5 bg-white/40 backdrop-blur-xl rounded-[2rem] p-6 shadow-sm border border-white/60 h-fit space-y-4">
+          <h3 className="text-xl font-extrabold mb-4" style={{ color: themePrimary }}>{t('addWorkout', 'Hareket Ekle')}</h3>
+          
+          <div className="flex gap-2 bg-white/50 p-1.5 rounded-2xl border border-white/60 mb-4">
+            {['Push', 'Pull', 'Leg'].map(cat => (
+              <button
+                key={cat}
+                onClick={() => setCategory(cat)}
+                className={`flex-1 py-2 rounded-xl text-sm font-black transition-all ${category === cat ? 'bg-white shadow-sm scale-[1.02]' : 'opacity-60 hover:opacity-100'}`}
+                style={{ color: category === cat ? themePrimary : 'inherit' }}
+              >
+                {cat}
+              </button>
+            ))}
+          </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        <div className="bg-white/40 backdrop-blur-xl rounded-[2rem] p-6 shadow-sm border border-white/60 space-y-4 h-fit w-full">
-          <h2 className="text-lg font-extrabold mb-4">{t('addNewSet', 'Yeni Set Ekle')}</h2>
-          
-          <input 
-            type="text" value={exercise} onChange={(e) => setExercise(e.target.value)}
-            placeholder={t('exerciseNamePlaceholder', 'Hareket Adı (Örn: Bench Press)')} 
-            className="w-full bg-white/60 border border-white/80 rounded-xl px-4 py-3 text-sm font-extrabold focus:outline-none transition-all placeholder-current opacity-70" 
-          />
-          
-          <div className="grid grid-cols-2 gap-4 w-full">
+          <div className="space-y-2">
+            <label className="text-sm font-extrabold opacity-80">{t('exerciseName', 'Hareket Adı')}</label>
             <input 
-              type="number" value={weight} onChange={(e) => setWeight(e.target.value)}
-              placeholder={t('weightPlaceholder', 'Ağırlık (kg)')} 
-              className="w-full min-w-0 bg-white/60 border border-white/80 rounded-xl px-4 py-3 text-sm font-extrabold focus:outline-none transition-all placeholder-current opacity-70" 
-            />
-            <input 
-              type="number" value={reps} onChange={(e) => setReps(e.target.value)}
-              placeholder={t('repsPlaceholder', 'Tekrar')} 
-              className="w-full min-w-0 bg-white/60 border border-white/80 rounded-xl px-4 py-3 text-sm font-extrabold focus:outline-none transition-all placeholder-current opacity-70" 
+              type="text" 
+              value={exerciseName}
+              onChange={(e) => setExerciseName(e.target.value)}
+              placeholder={t('exerciseNamePlaceholder', 'Örn: Bench Press')}
+              className="w-full bg-white border border-white/80 rounded-xl px-4 py-3 font-bold focus:outline-none transition-all shadow-inner"
             />
           </div>
 
-          <button onClick={handleSaveSet} className="w-full mt-2 py-3 rounded-xl bg-white/60 hover:bg-white border border-white/80 font-extrabold active:scale-95 transition-all flex items-center justify-center space-x-2 shadow-sm">
-            <Plus size={18} strokeWidth={3} /> <span>{t('saveSetBtn', 'Seti Kaydet')}</span>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <label className="text-sm font-extrabold opacity-80">{t('weightKg', 'Ağırlık (kg)')}</label>
+              <input 
+                type="number" 
+                value={weight}
+                onChange={(e) => setWeight(Number(e.target.value) || '')}
+                placeholder="60"
+                className="w-full bg-white border border-white/80 rounded-xl px-4 py-3 font-bold focus:outline-none transition-all shadow-inner text-center"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-extrabold opacity-80">{t('sets', 'Set')}</label>
+              <input 
+                type="number" 
+                value={sets}
+                onChange={(e) => setSets(Number(e.target.value) || '')}
+                placeholder="3"
+                className="w-full bg-white border border-white/80 rounded-xl px-4 py-3 font-bold focus:outline-none transition-all shadow-inner text-center"
+              />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-extrabold opacity-80">{t('reps', 'Tekrar')}</label>
+            <input 
+              type="number" 
+              value={reps}
+              onChange={(e) => setReps(Number(e.target.value) || '')}
+              placeholder="10"
+              className="w-full bg-white border border-white/80 rounded-xl px-4 py-3 font-bold focus:outline-none transition-all shadow-inner text-center"
+            />
+          </div>
+
+          <button 
+            onClick={handleSave}
+            className="w-full py-4 mt-2 rounded-xl bg-white hover:bg-white/90 border border-white/80 font-black text-lg active:scale-95 transition-all shadow-sm flex items-center justify-center gap-2"
+            style={{ color: themePrimary }}
+          >
+            <Plus size={20} strokeWidth={3} /> {t('saveBtn', 'Kaydet')}
           </button>
         </div>
 
-        <div className="bg-white/40 backdrop-blur-xl rounded-[2rem] p-6 shadow-sm border border-white/60 w-full overflow-hidden">
-          <h2 className="text-lg font-extrabold mb-4">{t('todaysRecords', { program })}</h2>
-          
-          <div className="space-y-4">
-            {logs.filter(log => log.programType === program).length > 0 ? (
-              Array.from(new Set(logs.filter(l => l.programType === program).map(l => l.exerciseName))).map(exName => (
-                <div key={exName} className="bg-white/60 border border-white/80 p-4 rounded-xl shadow-sm w-full">
-                  <h3 className="font-extrabold border-b border-white/50 pb-2 mb-3">{exName}</h3>
-                  <div className="space-y-2">
-                    {logs.filter(l => l.exerciseName === exName && l.programType === program).map((setLog, idx) => (
-                      <div key={idx} className="grid grid-cols-4 gap-2 items-center text-sm font-bold opacity-80 border-b border-white/20 pb-2 last:border-0 last:pb-0">
-                        <span className="text-left whitespace-nowrap">{t('sets', 'Set')} {setLog.setNumber}</span>
-                        <span className="text-center whitespace-nowrap">{setLog.weight} kg</span>
-                        <span className="text-center whitespace-nowrap">{setLog.reps} {t('repsShort', 'tekrar')}</span>
-                        <div className="flex justify-end">
-                          <Check size={16} color={themePrimary} strokeWidth={3} />
+        {/* SAĞ PANEL */}
+        <div className="lg:col-span-7 space-y-4">
+          <div className="flex bg-white/40 p-1.5 rounded-2xl border border-white/60 shadow-sm">
+            <button
+              onClick={() => setActiveTab('today')}
+              className={`flex-1 py-3 px-4 rounded-xl flex items-center justify-center gap-2 font-extrabold transition-all duration-300 ${activeTab === 'today' ? 'bg-white shadow-sm scale-[1.02]' : 'opacity-60 hover:opacity-100'}`}
+              style={{ color: activeTab === 'today' ? themePrimary : 'inherit' }}
+            >
+              <CalendarCheck size={20} /> {t('todaysWorkouts', 'Bugünkü Antrenmanlar')}
+            </button>
+            <button
+              onClick={() => setActiveTab('history')}
+              className={`flex-1 py-3 px-4 rounded-xl flex items-center justify-center gap-2 font-extrabold transition-all duration-300 ${activeTab === 'history' ? 'bg-white shadow-sm scale-[1.02]' : 'opacity-60 hover:opacity-100'}`}
+              style={{ color: activeTab === 'history' ? themePrimary : 'inherit' }}
+            >
+              <History size={20} /> {t('history', 'Geçmişi')}
+            </button>
+          </div>
+
+          <div className="bg-white/40 backdrop-blur-xl rounded-[2rem] p-6 shadow-sm border border-white/60 min-h-[400px]">
+            {activeTab === 'today' && (
+              <div className="space-y-3 animate-in fade-in slide-in-from-right-4 duration-500">
+                {todaysWorkouts.length > 0 ? (
+                  todaysWorkouts.map((workout) => (
+                    <div key={workout.id} className="flex items-center justify-between bg-white/60 p-4 rounded-2xl border border-white/80 shadow-sm transition-all hover:bg-white/80">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-2">
+                          <p className="font-extrabold text-lg">{workout.exerciseName}</p>
+                          <span className={`text-[10px] font-black px-2 py-0.5 rounded-md border ${getCategoryColor(workout.category)}`}>
+                            {workout.category}
+                          </span>
+                        </div>
+                        <div className="flex gap-2 text-sm font-black opacity-80">
+                          <span className="bg-white/50 px-3 py-1 rounded-lg border border-white/40">{workout.weight} kg</span>
+                          <span className="bg-white/50 px-3 py-1 rounded-lg border border-white/40">{workout.sets} {t('sets', 'Set')}</span>
+                          <span className="bg-white/50 px-3 py-1 rounded-lg border border-white/40">{workout.reps} {t('repsShort', 'Tkr')}</span>
                         </div>
                       </div>
-                    ))}
+                      <button onClick={() => handleDelete(workout.id)} className="p-3 bg-red-500/10 hover:bg-red-500/20 rounded-xl text-red-600 active:scale-90 transition-all shrink-0 ml-4">
+                        <Trash2 size={20} />
+                      </button>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center py-16 opacity-60">
+                    <p className="font-bold">{t('noWorkoutData', 'Bugün henüz hareket eklemedin.')}</p>
+                    <p className="text-sm mt-1">{t('addWorkoutPrompt', 'Hemen yandaki formdan ilk hareketini gir!')}</p>
                   </div>
-                </div>
-              ))
-            ) : (
-              <p className="opacity-60 font-bold text-center py-10">
-                {t('noWorkoutDataLine1', 'Henüz bu program için set girmedin.')}<br/>{t('noWorkoutDataLine2', 'Hemen ilk setini ekle!')}
-              </p>
+                )}
+              </div>
+            )}
+
+            {activeTab === 'history' && (
+              <div className="space-y-6 animate-in fade-in slide-in-from-left-4 duration-500 max-h-[500px] overflow-y-auto pr-2 no-scrollbar">
+                {sortedHistoryDates.length > 0 ? (
+                  sortedHistoryDates.map(date => {
+                    const dateObj = new Date(date);
+                    const formattedDate = dateObj.toLocaleDateString(i18n.language || 'tr', { weekday: 'long', day: 'numeric', month: 'long' });
+                    
+                    return (
+                      <div key={date} className="space-y-3">
+                        <div className="flex items-center gap-2 border-b border-black/10 pb-2 mb-3">
+                          <div className="w-2 h-2 rounded-full" style={{ backgroundColor: themePrimary }}></div>
+                          <h4 className="font-black text-sm uppercase opacity-70 tracking-wider">{formattedDate}</h4>
+                        </div>
+                        
+                        {groupedHistory[date].map(workout => (
+                          <div key={workout.id} className="flex items-center justify-between bg-white/40 p-4 rounded-2xl border border-white/60 shadow-sm">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-1.5">
+                                <p className="font-extrabold text-base opacity-90">{workout.exerciseName}</p>
+                                <span className={`text-[10px] font-black px-2 py-0.5 rounded-md border ${getCategoryColor(workout.category)}`}>
+                                  {workout.category}
+                                </span>
+                              </div>
+                              <div className="flex gap-2 text-xs font-bold opacity-70">
+                                <span className="bg-white/40 px-2 py-1 rounded-md">{workout.weight} kg</span>
+                                <span className="bg-white/40 px-2 py-1 rounded-md">{workout.sets} {t('sets', 'Set')}</span>
+                                <span className="bg-white/40 px-2 py-1 rounded-md">{workout.reps} {t('repsShort', 'Tkr')}</span>
+                              </div>
+                            </div>
+                            <button onClick={() => handleDelete(workout.id)} className="p-2.5 bg-red-500/5 hover:bg-red-500/10 rounded-lg text-red-500 active:scale-90 transition-all shrink-0 ml-4">
+                              <Trash2 size={16} />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    );
+                  })
+                ) : (
+                  <div className="text-center py-16 opacity-60">
+                    <p className="font-bold">Geçmişe ait hiçbir antrenman kaydı bulunamadı.</p>
+                  </div>
+                )}
+              </div>
             )}
           </div>
         </div>

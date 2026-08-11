@@ -1,9 +1,9 @@
 import { useState, useContext } from 'react';
 import { BrowserRouter, Routes, Route, NavLink, Outlet, useLocation } from 'react-router-dom';
-import { Home, Dumbbell, Utensils, Droplets, LineChart as LineChartIcon, Settings as SettingsIcon, Moon, Globe, ChevronDown } from 'lucide-react';
+import { Home, Dumbbell, Utensils, Droplets, LineChart as LineChartIcon, Settings as SettingsIcon, Moon, Globe, ChevronDown, User } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { User } from 'lucide-react'; // User ikonunu lucide-react listesine ekleme
-import Profile from './pages/Profile'; // Profil sayfasını import etme
+import Profile from './pages/Profile'; 
+import { ToastProvider } from './context/ToastContext';
 
 import { ThemeContext } from './context/ThemeContext';
 import Sleep from './pages/Sleep';
@@ -68,7 +68,7 @@ function Layout() {
     { path: '/water', icon: Droplets, label: t('Su') },
     { path: '/progress', icon: LineChartIcon, label: t('Gelişim') },
     { path: '/sleep', icon: Moon, label: t('Uyku') },
-    { path: '/profile', icon: User, label: t('profile', 'Profil') }, // BİRİNCİ EKLEME BURAYA
+    { path: '/profile', icon: User, label: t('profile', 'Profil') },
     { path: '/settings', icon: SettingsIcon, label: t('Ayarlar') },
   ];
 
@@ -137,19 +137,19 @@ function Layout() {
       {/* ANA İÇERİK ALANI */}
       <main className="flex-1 flex flex-col overflow-hidden bg-transparent relative">
         
-        {/* YENİ: MOBİL İÇİN ÜST BAŞLIK (FitAssist) */}
+        {/* MOBİL İÇİN ÜST BAŞLIK */}
         <div className="md:hidden flex items-center justify-between pt-8 px-6 pb-2 z-10 shrink-0">
           <h1 className="text-3xl font-black tracking-tighter">FIT<span className="opacity-70">ASSIST</span></h1>
         </div>
 
-        {/* YENİ: YUMUŞAK SAYFA GEÇİŞ EFEKTİ (key=location.pathname sayesinde her geçişte tetiklenir) */}
+        {/* YUMUŞAK SAYFA GEÇİŞ EFEKTİ */}
         <div key={location.pathname} className="flex-1 overflow-y-auto w-full no-scrollbar pb-28 animate-in fade-in slide-in-from-bottom-4 duration-500 ease-out">
           <Outlet />
         </div>
         
-        {/* YENİ: YÜZEN, YUMUŞAK GEÇİŞLİ PREMIUM ALT MENÜ */}
-        <nav className="md:hidden absolute bottom-4 left-4 right-4 bg-white/60 backdrop-blur-3xl border border-white/60 rounded-[2rem] z-40 shadow-[0_10px_40px_rgba(0,0,0,0.1)]">
-          <div className="flex justify-between items-center px-2 py-2">
+        {/* YÜZEN, YUMUŞAK GEÇİŞLİ PREMIUM ALT MENÜ */}
+        <nav className="md:hidden absolute bottom-4 left-3 right-3 bg-white/60 backdrop-blur-3xl border border-white/60 rounded-[2rem] z-40 shadow-[0_10px_40px_rgba(0,0,0,0.1)] overflow-x-auto no-scrollbar">
+          <div className="flex justify-between items-center px-1.5 py-1.5 min-w-max">
             {navItems.map((item) => {
               const Icon = item.icon;
               const isActive = currentPath === item.path || (item.path !== '/' && currentPath.startsWith(item.path));
@@ -157,13 +157,15 @@ function Layout() {
                 <NavLink 
                   key={item.path} 
                   to={item.path} 
-                  className={`relative flex items-center justify-center rounded-2xl transition-all duration-500 ease-out overflow-hidden ${isActive ? 'bg-white shadow-sm border border-white/80 p-2.5 px-4' : 'p-2.5 opacity-50 hover:opacity-100 active:scale-90'}`}
+                  /* DÜZELTME: shrink-0 eklendi, padding değerleri p-1.5 olarak rahatlatıldı */
+                  className={`relative flex items-center justify-center shrink-0 rounded-2xl transition-all duration-500 ease-out overflow-hidden mx-0.5 ${isActive ? 'bg-white shadow-sm border border-white/80 p-2 px-3' : 'p-2 opacity-60 hover:opacity-100 active:scale-90'}`}
                 >
-                  <Icon size={22} strokeWidth={isActive ? 2.5 : 2} color={themePrimary} className={`transition-transform duration-500 ${isActive ? 'scale-110' : ''}`} />
+                  {/* DÜZELTME: İkonun küçülmesini engellemek için shrink-0 eklendi */}
+                  <Icon size={22} strokeWidth={isActive ? 2.5 : 2} color={themePrimary} className={`shrink-0 transition-transform duration-500 ${isActive ? 'scale-110' : ''}`} />
                   
-                  {/* Animasyonlu Metin Genişleme Efekti (Accordion tarzı) */}
-                  <div className={`transition-all duration-500 ease-out flex items-center ${isActive ? 'max-w-[80px] ml-1.5 opacity-100' : 'max-w-0 opacity-0 ml-0'}`}>
-                    <span className="text-[10px] font-extrabold tracking-wide whitespace-nowrap" style={{ color: themePrimary }}>{item.label}</span>
+                  {/* Animasyonlu Metin Genişleme Efekti */}
+                  <div className={`transition-all duration-500 ease-out flex items-center shrink-0 ${isActive ? 'max-w-[100px] ml-1.5 opacity-100' : 'max-w-0 opacity-0 ml-0'}`}>
+                    <span className="text-[11px] font-extrabold tracking-wide whitespace-nowrap" style={{ color: themePrimary }}>{item.label}</span>
                   </div>
                 </NavLink>
               );
@@ -186,6 +188,7 @@ export default function App() {
 
   return (
     <ThemeContext.Provider value={{ themeBg, themePrimary, setTheme: updateTheme }}>
+     <ToastProvider>
       <BrowserRouter>
         <Routes>
          <Route path="/" element={<Layout />}>
@@ -195,11 +198,12 @@ export default function App() {
          <Route path="nutrition" element={<Nutrition />} />
          <Route path="water" element={<WaterTracker />} />
          <Route path="progress" element={<Progress />} />
-         <Route path="profile" element={<Profile />} /> {/* İKİNCİ EKLEME BURAYA */}
+         <Route path="profile" element={<Profile />} />
          <Route path="settings" element={<Settings />} />
          </Route>
         </Routes>
       </BrowserRouter>
+     </ToastProvider>
     </ThemeContext.Provider>
   );
 }

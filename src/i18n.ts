@@ -4,7 +4,6 @@ import { initReactI18next } from 'react-i18next';
 const resources = {
   tr: {
     translation: {
-      // 1. ALT MENÜ VE GENEL KELİMELER
       Anasayfa: "Anasayfa",
       Antrenman: "Antrenman",
       Beslenme: "Beslenme",
@@ -16,7 +15,6 @@ const resources = {
       cancelBtn: "İptal",
       addBtn: "Ekle",
       
-      // 2. UYKU SAYFASI
       sleepTitle: "Uyku Takibi",
       sleepDesc: "Yağ yakımı ve toparlanma için uyku düzenini analiz et.",
       addSleepRecord: "Uyku Kaydı Ekle",
@@ -33,7 +31,6 @@ const resources = {
       noSleepDataLine2: "Yukarıdaki formdan ilk kaydını oluştur.",
       alertEnterSleepTime: "Lütfen uyku süresini gir!",
 
-      // 3. GELİŞİM (KİLO) SAYFASI
       progressTitle: "Gelişim Takibi",
       weightHistory: "Kilo Geçmişi",
       newWeightRecord: "Yeni Kilo Kaydı",
@@ -48,7 +45,6 @@ const resources = {
       noDataLine1: "Henüz veri yok.",
       noDataLine2: "İlk ölçümünü aşağıdan ekle!",
 
-      // 4. ANTRENMAN SAYFASI
       workoutTitle: "Antrenman Programı",
       startWorkoutBtn: "Antrenmana Başla",
       exercises: "Egzersizler",
@@ -66,8 +62,13 @@ const resources = {
       noWorkoutDataLine2: "bir set girmedin.",
       alertFillAll: "Kayıt yapılamadı: Lütfen Hareket Adı, Ağırlık ve Tekrar alanlarının hepsini doldur!",
       alertServerError: "Kayıt başarısız! Lütfen Java (Spring Boot) arka plan uygulamasının çalıştığından emin ol.",
+      addWorkout: "Hareket Ekle",
+      exerciseName: "Hareket Adı",
+      weightKg: "Ağırlık (kg)",
+      todaysWorkouts: "Bugünkü Antrenmanlar",
+      noWorkoutData: "Bugün henüz hareket eklemedin.",
+      addWorkoutPrompt: "Hemen yandaki formdan ilk hareketini gir!",
 
-      // 5. BESLENME SAYFASI
       nutritionTitle: "Beslenme Takibi",
       nutritionDesc: "Hedefine ulaşmak için ana öğünlerini takip et.",
       Kahvaltı: "Kahvaltı",
@@ -91,15 +92,18 @@ const resources = {
       highCarbs: "Yüksek Karb",
       highFat: "Yüksek Yağ",
 
-      // 6. SU SAYFASI
       waterTitle: "Su Takibi",
+      waterDesc: "Günlük su tüketimini takip et.",
       dailyGoal: "Günlük Hedef",
       glasses: "Bardak",
       bottle: "Şişe",
       addWater: "Su Ekle",
       resetBtn: "Sıfırla",
+      customAmount: "Özel Miktar",
+      todayRecords: "Bugünkü Kayıtlar",
+      noWaterData: "Bugün hiç su kaydı eklemedin.",
+      weeklyWaterAnalysis: "Haftalık Analiz",
 
-      // 7. AYARLAR SAYFASI
       settingsTitle: "Genel Ayarlar",
       language: "Dil",
       theme: "Tema",
@@ -115,7 +119,6 @@ const resources = {
       bgColor: "Arka Plan Rengi",
       primaryColor: "Vurgu Rengi (Yazılar)",
 
-      // 8. DASHBOARD (ANASAYFA WIDGETLARI)
       welcomeGreeting: "Merhaba! 👋",
       dashboardNutritionTitle: "Beslenme Özetin",
       consumed: "alındı",
@@ -133,12 +136,32 @@ const resources = {
       createProfile: "Profil Oluştur",
       createProfileDesc: "Kişiselleştirilmiş verilerin için profilini tamamla.",
 
-      // 9. GRAFİKLER VE MAKROLAR
-      macroDistribution: "Haftalık Makro Dağılımı",
+      macroDistribution: "Makro Dağılımı",
       noGraphData: "Grafik oluşturmak için öğünlerine besin ekle.",
       proteinShort: "P",
       carbsShort: "K",
-      fatShort: "Y"
+      fatShort: "Y",
+
+      loginTitle: "Giriş Yap",
+      loginDesc: "Verilerine ulaşmak için giriş yap.",
+      emailPlaceholder: "E-posta Adresi",
+      passwordPlaceholder: "Şifre",
+      forgotPassword: "Şifremi Unuttum?",
+      loginBtn: "Giriş Yap",
+      noAccount: "Hesabın yok mu? Kayıt Ol",
+      
+      registerTitle: "Hesap Oluştur",
+      registerDesc: "FitAssist ile hedeflerine ulaşmaya başla.",
+      fullNamePlaceholder: "Ad Soyad",
+      registerBtn: "Kayıt Ol",
+      alreadyHaveAccount: "Zaten hesabın var mı? Giriş Yap",
+
+      fillAllFields: "Lütfen tüm alanları doldurun!",
+      successSaved: "Başarıyla kaydedildi!",
+      loginSuccess: "Başarıyla giriş yapıldı!",
+      loginError: "Hata! Lütfen bilgilerinizi kontrol edin.",
+      resetLinkSent: "Şifre sıfırlama bağlantısı gönderildi!",
+      serverError: "Sunucuya bağlanılamadı!"
     }
   },
   en: {
@@ -187,7 +210,7 @@ const resources = {
       workoutTitle: "Workout Routine",
       startWorkoutBtn: "Start Workout",
       exercises: "Exercises",
-      sets: "Set",
+      sets: "Sets",
       reps: "Reps",
       workoutDesc: "Choose today's program and log your sets.",
       addNewSet: "Add New Set",
@@ -201,6 +224,13 @@ const resources = {
       noWorkoutDataLine2: "for this program today.",
       alertFillAll: "Save failed: Please fill in the Exercise Name, Weight, and Reps fields!",
       alertServerError: "Save failed! Please ensure the Java backend is running.",
+      
+      addWorkout: "Add Exercise",
+      exerciseName: "Exercise Name",
+      weightKg: "Weight (kg)",
+      todaysWorkouts: "Today's Workouts",
+      noWorkoutData: "You haven't added any exercises today.",
+      addWorkoutPrompt: "Add your first exercise from the form!",
 
       nutritionTitle: "Nutrition Tracking",
       nutritionDesc: "Track your main meals to reach your goal.",
@@ -226,11 +256,17 @@ const resources = {
       highFat: "High Fat",
 
       waterTitle: "Water Tracking",
+      waterDesc: "Track your daily water intake.",
       dailyGoal: "Daily Goal",
       glasses: "Glasses",
       bottle: "Bottle",
       addWater: "Add Water",
       resetBtn: "Reset",
+      
+      customAmount: "Custom Amount",
+      todayRecords: "Today's Records",
+      noWaterData: "You haven't added any water records today.",
+      weeklyWaterAnalysis: "Weekly Analysis",
 
       language: "Language",
       theme: "Theme",
@@ -247,7 +283,6 @@ const resources = {
       primaryColor: "Primary Color (Text)",
       settingsTitle: "General Settings",
 
-      // 8. DASHBOARD (ANASAYFA WIDGETLARI)
       welcomeGreeting: "Hello! 👋",
       dashboardNutritionTitle: "Nutrition Summary",
       consumed: "consumed",
@@ -265,12 +300,32 @@ const resources = {
       createProfile: "Create Profile",
       createProfileDesc: "Complete your profile for personalized data.",
 
-      // 9. CHARTS AND MACROS
       macroDistribution: "Weekly Macro Distribution",
       noGraphData: "Add food to your meals to generate the chart.",
       proteinShort: "P",
       carbsShort: "C",
-      fatShort: "F"
+      fatShort: "F",
+
+      loginTitle: "Login",
+      loginDesc: "Log in to access your data.",
+      emailPlaceholder: "Email Address",
+      passwordPlaceholder: "Password",
+      forgotPassword: "Forgot Password?",
+      loginBtn: "Login",
+      noAccount: "Don't have an account? Sign Up",
+
+      registerTitle: "Create Account",
+      registerDesc: "Start reaching your goals with FitAssist.",
+      fullNamePlaceholder: "Full Name",
+      registerBtn: "Sign Up",
+      alreadyHaveAccount: "Already have an account? Login",
+
+      fillAllFields: "Please fill in all fields!",
+      successSaved: "Saved successfully!",
+      loginSuccess: "Logged in successfully!",
+      loginError: "Error! Please check your credentials.",
+      resetLinkSent: "Password reset link sent!",
+      serverError: "Could not connect to server!"
     }
   },
   es: {
@@ -292,7 +347,7 @@ const resources = {
       howManyHours: "¿Cuántas horas dormiste?",
       hours: "Horas",
       pastDay: "¿Vas a introducir una fecha pasada?",
-      weeklyAnalysis: "Análisis Semanal",
+      weeklyWaterAnalysis: "Análisis Semanal",
       ideal: "Ideal",
       average: "Promedio",
       insufficient: "Insuficiente",
@@ -319,7 +374,7 @@ const resources = {
       workoutTitle: "Rutina de Entrenamiento",
       startWorkoutBtn: "Iniciar Entrenamiento",
       exercises: "Ejercicios",
-      sets: "Serie",
+      sets: "Series",
       reps: "Repeticiones",
       workoutDesc: "Elige tu programa de hoy y registra tus series.",
       addNewSet: "Añadir Nueva Serie",
@@ -333,6 +388,12 @@ const resources = {
       noWorkoutDataLine2: "para este programa hoy.",
       alertFillAll: "Error al guardar: ¡Rellena todos los campos!",
       alertServerError: "¡Error al guardar! Asegúrate de que el servidor está funcionando.",
+      addWorkout: "Añadir Ejercicio",
+      exerciseName: "Nombre del Ejercicio",
+      weightKg: "Peso (kg)",
+      todaysWorkouts: "Entrenamientos de Hoy",
+      noWorkoutData: "Aún no has añadido ejercicios hoy.",
+      addWorkoutPrompt: "¡Añade tu primer ejercicio desde el formulario!",
 
       nutritionTitle: "Seguimiento de Nutrición",
       nutritionDesc: "Haz un seguimiento de tus comidas principales para alcanzar tu meta.",
@@ -358,11 +419,16 @@ const resources = {
       highFat: "Alto en Grasas",
 
       waterTitle: "Seguimiento de Agua",
+      waterDesc: "Rastrea tu consumo diario de agua.",
       dailyGoal: "Meta Diaria",
       glasses: "Vasos",
       bottle: "Botella",
       addWater: "Añadir Agua",
       resetBtn: "Restablecer",
+      customAmount: "Cantidad Personalizada",
+      todayRecords: "Registros de Hoy",
+      noWaterData: "No has registrado agua hoy.",
+      weeklyAnalysis: "Análisis Semanal",
 
       settingsTitle: "Ajustes Generales",
       language: "Idioma",
@@ -379,7 +445,6 @@ const resources = {
       bgColor: "Color de Fondo",
       primaryColor: "Color Principal (Texto)",
 
-      // 8. DASHBOARD (ANASAYFA WIDGETLARI)
       welcomeGreeting: "¡Hola! 👋",
       dashboardNutritionTitle: "Resumen Nutricional",
       consumed: "consumido",
@@ -397,12 +462,32 @@ const resources = {
       createProfile: "Crear Perfil",
       createProfileDesc: "Completa tu perfil para datos personalizados.",
 
-      // 9. GRÁFICOS Y MACROS
       macroDistribution: "Distribución de Macros",
       noGraphData: "Añade alimentos a tus comidas para generar el gráfico.",
       proteinShort: "P",
       carbsShort: "C",
-      fatShort: "G"
+      fatShort: "G",
+
+      loginTitle: "Iniciar Sesión",
+      loginDesc: "Inicia sesión para acceder a tus datos.",
+      emailPlaceholder: "Correo Electrónico",
+      passwordPlaceholder: "Contraseña",
+      forgotPassword: "¿Olvidaste tu contraseña?",
+      loginBtn: "Entrar",
+      noAccount: "¿No tienes cuenta? Regístrate",
+
+      registerTitle: "Crear Cuenta",
+      registerDesc: "Empieza a alcanzar tus metas con FitAssist.",
+      fullNamePlaceholder: "Nombre Completo",
+      registerBtn: "Registrarse",
+      alreadyHaveAccount: "¿Ya tienes una cuenta? Inicia Sesión",
+
+      fillAllFields: "¡Por favor, rellena todos los campos!",
+      successSaved: "¡Guardado con éxito!",
+      loginSuccess: "¡Inicio de sesión exitoso!",
+      loginError: "¡Error! Por favor verifica tus datos.",
+      resetLinkSent: "¡Enlace de recuperación enviado!",
+      serverError: "¡No se pudo conectar al servidor!"
     }
   },
   fr: {
@@ -424,10 +509,10 @@ const resources = {
       howManyHours: "Combien d'heures avez-vous dormi ?",
       hours: "Heures",
       pastDay: "Saisissez-vous une date passée ?",
-      weeklyAnalysis: "Analyse Hebdomadaire",
+      weeklyWaterAnalysis: "Analyse Hebdomadaire",
       ideal: "Idéal",
       average: "Moyen",
-      insufficient: "Insuficiente",
+      insufficient: "Insuffisant",
       dateText: "Date :",
       todayText: "Aujourd'hui",
       noSleepDataLine1: "Vous n'avez pas encore entré de données de sommeil.",
@@ -451,7 +536,7 @@ const resources = {
       workoutTitle: "Programme d'Entraînement",
       startWorkoutBtn: "Commencer l'Entraînement",
       exercises: "Exercices",
-      sets: "Série",
+      sets: "Séries",
       reps: "Répétitions",
       workoutDesc: "Choisissez votre programme du jour et enregistrez vos séries.",
       addNewSet: "Ajouter une Nouvelle Série",
@@ -465,6 +550,12 @@ const resources = {
       noWorkoutDataLine2: "pour ce programme aujourd'hui.",
       alertFillAll: "Échec de l'enregistrement : Remplissez tous les champs !",
       alertServerError: "Échec de l'enregistrement ! Vérifiez que le serveur fonctionne.",
+      addWorkout: "Ajouter un Exercice",
+      exerciseName: "Nom de l'Exercice",
+      weightKg: "Poids (kg)",
+      todaysWorkouts: "Entraînements du Jour",
+      noWorkoutData: "Vous n'avez pas ajouté d'exercices aujourd'hui.",
+      addWorkoutPrompt: "Ajoutez votre premier exercice depuis le formulaire !",
 
       nutritionTitle: "Suivi de la Nutrition",
       nutritionDesc: "Suivez vos repas principaux pour atteindre votre objectif.",
@@ -490,11 +581,16 @@ const resources = {
       highFat: "Riche en Lipides",
 
       waterTitle: "Suivi de l'Eau",
+      waterDesc: "Suivez votre consommation d'eau quotidienne.",
       dailyGoal: "Objectif Quotidien",
       glasses: "Verres",
       bottle: "Bouteille",
       addWater: "Ajouter de l'Eau",
       resetBtn: "Réinitialiser",
+      customAmount: "Quantité Personnalisée",
+      todayRecords: "Enregistrements du Jour",
+      noWaterData: "Vous n'avez pas enregistré d'eau aujourd'hui.",
+      weeklyAnalysis: "Analyse Hebdomadaire",
 
       settingsTitle: "Paramètres Généraux",
       language: "Langue",
@@ -511,7 +607,6 @@ const resources = {
       bgColor: "Couleur de Fond",
       primaryColor: "Couleur Principale (Texte)",
 
-      // 8. DASHBOARD (ANASAYFA WIDGETLARI)
       welcomeGreeting: "Bonjour! 👋",
       dashboardNutritionTitle: "Résumé Nutritionnel",
       consumed: "consommé",
@@ -529,12 +624,32 @@ const resources = {
       createProfile: "Créer un Profil",
       createProfileDesc: "Complétez votre profil pour des données personnalisées.",
 
-      // 9. GRAPHIQUES ET MACROS
       macroDistribution: "Distribution des Macros",
       noGraphData: "Ajoutez des aliments pour générer le graphique.",
       proteinShort: "P",
       carbsShort: "G",
-      fatShort: "L"
+      fatShort: "L",
+
+      loginTitle: "Se Connecter",
+      loginDesc: "Connectez-vous pour accéder à vos données.",
+      emailPlaceholder: "Adresse E-mail",
+      passwordPlaceholder: "Mot de passe",
+      forgotPassword: "Mot de passe oublié ?",
+      loginBtn: "Connexion",
+      noAccount: "Pas de compte ? S'inscrire",
+      
+      registerTitle: "Créer un Compte",
+      registerDesc: "Atteignez vos objectifs avec FitAssist.",
+      fullNamePlaceholder: "Nom Complet",
+      registerBtn: "S'inscrire",
+      alreadyHaveAccount: "Vous avez déjà un compte ? Se Connecter",
+
+      fillAllFields: "Veuillez remplir tous les champs !",
+      successSaved: "Enregistré avec succès !",
+      loginSuccess: "Connexion réussie !",
+      loginError: "Erreur ! Veuillez vérifier vos informations.",
+      resetLinkSent: "Lien de réinitialisation envoyé !",
+      serverError: "Impossible de se connecter au serveur !"
     }
   },
   it: {
@@ -551,12 +666,12 @@ const resources = {
       addBtn: "Aggiungi",
 
       sleepTitle: "Monitoraggio Sonno",
-      sleepDesc: "Analizza il tuo sonno per il recupero e la perdita di grasso.",
+      sleepDesc: "Analiza il tuo sonno per il recupero e la perdita di grasso.",
       addSleepRecord: "Aggiungi Registro",
       howManyHours: "Quante ore hai dormito?",
       hours: "Ore",
       pastDay: "Stai inserendo una data passata?",
-      weeklyAnalysis: "Analisi Settimanale",
+      weeklyWaterAnalysis: "Analisi Settimanale",
       ideal: "Ideale",
       average: "Media",
       insufficient: "Insufficiente",
@@ -597,6 +712,12 @@ const resources = {
       noWorkoutDataLine2: "per questo programma oggi.",
       alertFillAll: "Salvataggio fallito: Compila tutti i campi!",
       alertServerError: "Salvataggio fallito! Assicurati che il server sia in esecuzione.",
+      addWorkout: "Aggiungi Esercizio",
+      exerciseName: "Nome Esercizio",
+      weightKg: "Peso (kg)",
+      todaysWorkouts: "Allenamenti di Oggi",
+      noWorkoutData: "Non hai aggiunto esercizi oggi.",
+      addWorkoutPrompt: "Aggiungi il tuo primo esercizio dal modulo!",
 
       nutritionTitle: "Monitoraggio Nutrizione",
       nutritionDesc: "Tieni traccia dei tuoi pasti principali per raggiungere il tuo obiettivo.",
@@ -622,11 +743,16 @@ const resources = {
       highFat: "Alto contenuto di Grassi",
 
       waterTitle: "Monitoraggio Acqua",
+      waterDesc: "Monitora il tuo consumo d'acqua.",
       dailyGoal: "Obiettivo Giornaliero",
       glasses: "Bicchieri",
       bottle: "Bottiglia",
       addWater: "Aggiungi Acqua",
       resetBtn: "Ripristina",
+      customAmount: "Quantità Personalizzata",
+      todayRecords: "Record di Oggi",
+      noWaterData: "Non hai registrato acqua oggi.",
+      weeklyAnalysis: "Analisi Settimanale",
 
       settingsTitle: "Impostazioni Generali",
       language: "Lingua",
@@ -643,7 +769,6 @@ const resources = {
       bgColor: "Colore di Sfondo",
       primaryColor: "Colore Principale (Testo)",
 
-      // 8. DASHBOARD (ANASAYFA WIDGETLARI)
       welcomeGreeting: "Ciao! 👋",
       dashboardNutritionTitle: "Riepilogo Nutrizionale",
       consumed: "consumato",
@@ -661,12 +786,32 @@ const resources = {
       createProfile: "Crea Profilo",
       createProfileDesc: "Completa il tuo profilo per dati personalizzati.",
 
-      // 9. GRAFICI E MACRO
       macroDistribution: "Distribuzione dei Macro",
       noGraphData: "Aggiungi cibo per generare il grafico.",
       proteinShort: "P",
       carbsShort: "C",
-      fatShort: "G"
+      fatShort: "G",
+
+      loginTitle: "Accedi",
+      loginDesc: "Accedi per visualizzare i tuoi dati.",
+      emailPlaceholder: "Indirizzo Email",
+      passwordPlaceholder: "Password",
+      forgotPassword: "Password dimenticata?",
+      loginBtn: "Accedi",
+      noAccount: "Non hai un account? Registrati",
+
+      registerTitle: "Crea Account",
+      registerDesc: "Inizia a raggiungere i tuoi obiettivi con FitAssist.",
+      fullNamePlaceholder: "Nome Completo",
+      registerBtn: "Registrati",
+      alreadyHaveAccount: "Hai già un account? Accedi",
+
+      fillAllFields: "Compila tutti i campi!",
+      successSaved: "Salvato con successo!",
+      loginSuccess: "Accesso effettuato con successo!",
+      loginError: "Errore! Controlla i tuoi dati.",
+      resetLinkSent: "Link di ripristino inviato!",
+      serverError: "Impossibile connettersi al server!"
     }
   },
   de: {
@@ -715,7 +860,7 @@ const resources = {
       workoutTitle: "Trainingsplan",
       startWorkoutBtn: "Training starten",
       exercises: "Übungen",
-      sets: "Satz",
+      sets: "Sätze",
       reps: "Wiederholungen",
       workoutDesc: "Wähle dein heutiges Programm und speichere deine Sätze.",
       addNewSet: "Neuen Satz hinzufügen",
@@ -729,6 +874,12 @@ const resources = {
       noWorkoutDataLine2: "für dieses Programm gespeichert.",
       alertFillAll: "Speichern fehlgeschlagen: Bitte fülle alle Felder aus!",
       alertServerError: "Speichern fehlgeschlagen! Stelle sicher, dass der Server läuft.",
+      addWorkout: "Übung Hinzufügen",
+      exerciseName: "Übungsname",
+      weightKg: "Gewicht (kg)",
+      todaysWorkouts: "Heutige Trainings",
+      noWorkoutData: "Du hast heute keine Übungen hinzugefügt.",
+      addWorkoutPrompt: "Füge deine erste Übung über das Formular hinzu!",
 
       nutritionTitle: "Ernährungs-Tracking",
       nutritionDesc: "Verfolge deine Hauptmahlzeiten, um dein Ziel zu erreichen.",
@@ -754,11 +905,16 @@ const resources = {
       highFat: "Fettreich",
 
       waterTitle: "Wasser-Tracking",
+      waterDesc: "Verfolge deine tägliche Wasseraufnahme.",
       dailyGoal: "Tagesziel",
       glasses: "Gläser",
       bottle: "Flasche",
       addWater: "Wasser hinzufügen",
       resetBtn: "Zurücksetzen",
+      customAmount: "Eigene Menge",
+      todayRecords: "Heutige Einträge",
+      noWaterData: "Du hast heute kein Wasser eingetragen.",
+      weeklyWaterAnalysis: "Wöchentliche Analyse",
 
       settingsTitle: "Allgemeine Einstellungen",
       language: "Sprache",
@@ -775,7 +931,6 @@ const resources = {
       bgColor: "Hintergrundfarbe",
       primaryColor: "Primärfarbe (Text)",
 
-      // 8. DASHBOARD (ANASAYFA WIDGETLARI)
       welcomeGreeting: "Hallo! 👋",
       dashboardNutritionTitle: "Ernährung Zusammenfassung",
       consumed: "konsumiert",
@@ -793,12 +948,32 @@ const resources = {
       createProfile: "Profil Erstellen",
       createProfileDesc: "Vervollständige dein Profil für personalisierte Daten.",
 
-      // 9. DIAGRAMME UND MAKROS
       macroDistribution: "Makro-Verteilung",
       noGraphData: "Füge Lebensmittel hinzu, um das Diagramm zu erstellen.",
       proteinShort: "P",
       carbsShort: "K",
-      fatShort: "F"
+      fatShort: "F",
+
+      loginTitle: "Anmelden",
+      loginDesc: "Melde dich an, um auf deine Daten zuzugreifen.",
+      emailPlaceholder: "E-Mail-Adresse",
+      passwordPlaceholder: "Passwort",
+      forgotPassword: "Passwort vergessen?",
+      loginBtn: "Anmelden",
+      noAccount: "Kein Konto? Registrieren",
+
+      registerTitle: "Konto Erstellen",
+      registerDesc: "Erreiche deine Ziele mit FitAssist.",
+      fullNamePlaceholder: "Vollständiger Name",
+      registerBtn: "Registrieren",
+      alreadyHaveAccount: "Hast du bereits ein Konto? Anmelden",
+
+      fillAllFields: "Bitte füllen Sie alle Felder aus!",
+      successSaved: "Erfolgreich gespeichert!",
+      loginSuccess: "Erfolgreich angemeldet!",
+      loginError: "Fehler! Bitte überprüfen Sie Ihre Daten.",
+      resetLinkSent: "Link zum Zurücksetzen gesendet!",
+      serverError: "Verbindung zum Server fehlgeschlagen!"
     }
   }
 };

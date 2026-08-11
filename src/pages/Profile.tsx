@@ -2,13 +2,17 @@ import { useState, useContext, useRef, useEffect } from 'react';
 import { User, Mail, Lock, Camera, LogOut, ArrowRight, Ruler, Weight, Target, Save, Edit3, Calendar } from 'lucide-react';
 import { ThemeContext } from '../context/ThemeContext';
 import { useTranslation } from 'react-i18next';
+// YENİ: Bildirim (Toast) sistemi içe aktarılıyor
+import { ToastContext } from '../context/ToastContext';
 
 export default function Profile() {
   const { themePrimary } = useContext(ThemeContext);
   const { t } = useTranslation();
+  
+  // YENİ: Bildirim fonksiyonu çağrılıyor
+  const { showToast } = useContext(ToastContext);
 
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  // DÜZELTME: authMode artık 3 farklı durum alabiliyor
   const [authMode, setAuthMode] = useState<'login' | 'register' | 'forgotPassword'>('login');
   const [isEditing, setIsEditing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -46,9 +50,22 @@ export default function Profile() {
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // YENİ: Şifre sıfırlama işlemi ise sadece uyarı ver ve giriş ekranına dön
+    // Manuel Doğrulama (Çirkin HTML balonları yerine kendi şık Toast bildirimlerimiz)
+    if (authMode === 'login' && (!tempEmail || !tempPassword)) {
+      showToast(t('fillAllFields', 'Lütfen tüm alanları doldurun!'), 'error');
+      return;
+    }
+    if (authMode === 'register' && (!tempName || !tempEmail || !tempPassword)) {
+      showToast(t('fillAllFields', 'Lütfen tüm alanları doldurun!'), 'error');
+      return;
+    }
+    if (authMode === 'forgotPassword' && !tempEmail) {
+      showToast(t('fillAllFields', 'Lütfen tüm alanları doldurun!'), 'error');
+      return;
+    }
+
     if (authMode === 'forgotPassword') {
-      alert(t('resetLinkSentAlert', 'Şifre sıfırlama bağlantısı e-posta adresinize gönderildi! (Lütfen gelen kutunuzu kontrol edin)'));
+      showToast(t('resetLinkSent', 'Şifre sıfırlama bağlantısı gönderildi!'), 'success');
       setAuthMode('login');
       setTempEmail('');
       return;
@@ -68,8 +85,7 @@ export default function Profile() {
       });
 
       if (!response.ok) {
-        const errorText = await response.text();
-        alert("Hata: " + errorText); 
+        showToast(t('loginError', 'Hata! Lütfen bilgilerinizi kontrol edin.'), 'error');
         return;
       }
 
@@ -81,9 +97,12 @@ export default function Profile() {
 
       localStorage.setItem('fitassist_user', JSON.stringify(userData));
       setTempPassword('');
+      
+      showToast(t('loginSuccess', 'Başarıyla giriş yapıldı!'), 'success');
+
     } catch (error) {
-      console.error("Sunucuya bağlanılamadı:", error);
-      alert("Sunucuya bağlanılamadı. Java projesinin çalıştığından emin ol.");
+      console.error("Fetch error:", error);
+      showToast(t('serverError', 'Sunucuya bağlanılamadı!'), 'error');
     }
   };
 
@@ -98,7 +117,7 @@ export default function Profile() {
     const updatedUser = { id: userId, name, email, height, weight, age, goal, imageUrl: profilePic };
     localStorage.setItem('fitassist_user', JSON.stringify(updatedUser)); 
     setIsEditing(false);
-    alert(t('saveSuccess', 'Profil başarıyla güncellendi!'));
+    showToast(t('successSaved', 'Başarıyla kaydedildi!'), 'success');
   };
 
   const handleImageClick = () => fileInputRef.current?.click();
@@ -118,7 +137,6 @@ export default function Profile() {
         <div className="w-full bg-white/40 backdrop-blur-xl rounded-[2.5rem] p-8 border border-white/60 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
           <div className="text-center mb-8">
             <h2 className="text-3xl font-black tracking-tight mb-2">
-              {/* Başlık Duruma Göre Değişir */}
               {authMode === 'login' && t('loginTitle', 'Giriş Yap')}
               {authMode === 'register' && t('registerTitle', 'Hesap Oluştur')}
               {authMode === 'forgotPassword' && t('forgotPasswordTitle', 'Şifreni Sıfırla')}
@@ -130,31 +148,49 @@ export default function Profile() {
             </p>
           </div>
 
-          <form onSubmit={handleAuth} className="space-y-4">
+          {/* DÜZELTME: Tarayıcı uyarı balonlarını engellemek için noValidate eklendi */}
+          <form onSubmit={handleAuth} noValidate className="space-y-4">
             
-            {/* Sadece Kayıt Ol Ekranında İsim İste */}
             {authMode === 'register' && (
               <div className="relative">
                 <User size={20} className="absolute left-4 top-1/2 -translate-y-1/2 opacity-50" color={themePrimary} />
-                <input type="text" value={tempName} onChange={(e) => setTempName(e.target.value)} placeholder={t('namePlaceholder', 'Ad Soyad')} required className="w-full bg-white/60 border border-white/80 rounded-2xl pl-12 pr-4 py-4 font-bold focus:outline-none focus:ring-2 transition-all shadow-inner" style={{ '--tw-ring-color': themePrimary } as React.CSSProperties} />
+                <input 
+                  type="text" 
+                  value={tempName} 
+                  onChange={(e) => setTempName(e.target.value)} 
+                  placeholder={t('fullNamePlaceholder', 'Ad Soyad')} 
+                  className="w-full bg-white/60 border border-white/80 rounded-2xl pl-12 pr-4 py-4 font-bold focus:outline-none focus:ring-2 transition-all shadow-inner" 
+                  style={{ '--tw-ring-color': themePrimary } as React.CSSProperties} 
+                />
               </div>
             )}
 
-            {/* E-posta Her Ekran İçin Gerekli */}
             <div className="relative">
               <Mail size={20} className="absolute left-4 top-1/2 -translate-y-1/2 opacity-50" color={themePrimary} />
-              <input type="email" value={tempEmail} onChange={(e) => setTempEmail(e.target.value)} placeholder={t('emailPlaceholder', 'E-posta Adresi')} required className="w-full bg-white/60 border border-white/80 rounded-2xl pl-12 pr-4 py-4 font-bold focus:outline-none focus:ring-2 transition-all shadow-inner" style={{ '--tw-ring-color': themePrimary } as React.CSSProperties} />
+              <input 
+                type="email" 
+                value={tempEmail} 
+                onChange={(e) => setTempEmail(e.target.value)} 
+                placeholder={t('emailPlaceholder', 'E-posta Adresi')} 
+                className="w-full bg-white/60 border border-white/80 rounded-2xl pl-12 pr-4 py-4 font-bold focus:outline-none focus:ring-2 transition-all shadow-inner" 
+                style={{ '--tw-ring-color': themePrimary } as React.CSSProperties} 
+              />
             </div>
 
-            {/* Şifre Alanı Sadece Giriş ve Kayıt Ekranında Gözükür */}
             {authMode !== 'forgotPassword' && (
               <div className="relative">
                 <Lock size={20} className="absolute left-4 top-1/2 -translate-y-1/2 opacity-50" color={themePrimary} />
-                <input type="password" value={tempPassword} onChange={(e) => setTempPassword(e.target.value)} placeholder={t('passwordPlaceholder', 'Şifre')} required className="w-full bg-white/60 border border-white/80 rounded-2xl pl-12 pr-4 py-4 font-bold focus:outline-none focus:ring-2 transition-all shadow-inner" style={{ '--tw-ring-color': themePrimary } as React.CSSProperties} />
+                <input 
+                  type="password" 
+                  value={tempPassword} 
+                  onChange={(e) => setTempPassword(e.target.value)} 
+                  placeholder={t('passwordPlaceholder', 'Şifre')} 
+                  className="w-full bg-white/60 border border-white/80 rounded-2xl pl-12 pr-4 py-4 font-bold focus:outline-none focus:ring-2 transition-all shadow-inner" 
+                  style={{ '--tw-ring-color': themePrimary } as React.CSSProperties} 
+                />
               </div>
             )}
 
-            {/* YENİ: Giriş Ekranındaysa "Şifremi Unuttum" linki */}
             {authMode === 'login' && (
               <div className="text-right">
                 <button 
@@ -163,7 +199,7 @@ export default function Profile() {
                   className="text-xs font-extrabold opacity-70 hover:opacity-100 transition-opacity" 
                   style={{ color: themePrimary }}
                 >
-                  {t('forgotPasswordLink', 'Şifremi Unuttum?')}
+                  {t('forgotPassword', 'Şifremi Unuttum?')}
                 </button>
               </div>
             )}
@@ -177,14 +213,13 @@ export default function Profile() {
           </form>
 
           <div className="mt-6 text-center">
-            {/* Alt Yönlendirme Linkleri */}
             {authMode === 'forgotPassword' ? (
                <button onClick={() => setAuthMode('login')} className="text-sm font-extrabold opacity-80 hover:opacity-100 transition-opacity" style={{ color: themePrimary }}>
                  {t('backToLogin', 'Giriş Ekranına Dön')}
                </button>
             ) : (
               <button onClick={() => setAuthMode(authMode === 'login' ? 'register' : 'login')} className="text-sm font-extrabold opacity-80 hover:opacity-100 transition-opacity" style={{ color: themePrimary }}>
-                {authMode === 'login' ? t('switchToRegister', 'Hesabın yok mu? Kayıt Ol') : t('switchToLogin', 'Zaten hesabın var mı? Giriş Yap')}
+                {authMode === 'login' ? t('noAccount', 'Hesabın yok mu? Kayıt Ol') : t('alreadyHaveAccount', 'Zaten hesabın var mı? Giriş Yap')}
               </button>
             )}
           </div>
@@ -235,7 +270,7 @@ export default function Profile() {
           ) : (
             <div className="w-full space-y-4 animate-in slide-in-from-bottom-2 fade-in">
               <div className="space-y-1 text-left">
-                <label className="text-xs font-extrabold opacity-70 ml-1">{t('nameLabel', 'Ad Soyad')}</label>
+                <label className="text-xs font-extrabold opacity-70 ml-1">{t('fullNamePlaceholder', 'Ad Soyad')}</label>
                 <div className="relative">
                   <User size={18} className="absolute left-4 top-1/2 -translate-y-1/2 opacity-50" color={themePrimary} />
                   <input type="text" value={name} onChange={(e) => setName(e.target.value)} className="w-full bg-white/60 border border-white/80 rounded-2xl pl-11 pr-4 py-3 font-bold focus:outline-none focus:ring-2 transition-all shadow-inner" style={{ '--tw-ring-color': themePrimary } as React.CSSProperties} />
