@@ -12,7 +12,7 @@ export default function Dashboard() {
   const [profileData, setProfileData] = useState<{name: string, age: number, height: number, weight: number, imageUrl: string} | null>(null);
 
   const [nutrition, setNutrition] = useState({ cal: 0, p: 0, c: 0, f: 0 });
-  const [water, setWater] = useState({ consumed: 0, target: 3000 });
+  const [water, setWater] = useState({ consumed: 0, target: 2500 });
   const [sleepHours, setSleepHours] = useState<number | null>(null);
   const [workoutSets, setWorkoutSets] = useState(0);
 
@@ -22,12 +22,11 @@ export default function Dashboard() {
   });
 
   useEffect(() => {
-    // Profil hafızasını kontrol et
     const storedUser = localStorage.getItem('fitassist_user');
     if (storedUser) {
       const user = JSON.parse(storedUser);
       setProfileData({
-        name: user.name,
+        name: user.name || '',
         age: user.age || 0, 
         height: user.height || 0,
         weight: user.weight || 0,
@@ -37,7 +36,9 @@ export default function Dashboard() {
       setProfileData(null);
     }
 
-    // Backend'den diğer verileri çek (Fetch kodları aynen duruyor)
+    const savedWaterGoal = localStorage.getItem('dailyWaterGoal');
+    const targetAmount = savedWaterGoal ? Number(savedWaterGoal) : 2500;
+
     fetch('http://localhost:8080/api/nutrition/today')
       .then(res => res.json())
       .then(data => {
@@ -49,34 +50,39 @@ export default function Dashboard() {
           f += item.fats || 0;
         });
         setNutrition({ cal, p: Number(p.toFixed(1)), c: Number(c.toFixed(1)), f: Number(f.toFixed(1)) });
-      }).catch(err => console.log("Beslenme çekilemedi", err));
+      }).catch(err => console.log("Beslenme verisi çekilemedi", err));
 
-    fetch('http://localhost:8080/api/water/today')
+    fetch('http://localhost:8080/api/water/all')
       .then(res => res.json())
       .then(data => {
-        if (data.date && !data.date.startsWith(todayString)) return; 
-        setWater({ consumed: data.consumedAmount || 0, target: data.targetAmount || 3000 });
-      }).catch(err => console.log("Su çekilemedi", err));
+        if (data && data.length > 0) {
+          const todayWater = data
+            .filter((w: any) => w.date === todayString)
+            .reduce((sum: number, w: any) => sum + w.amount, 0);
+          setWater({ consumed: todayWater, target: targetAmount });
+        } else {
+          setWater({ consumed: 0, target: targetAmount });
+        }
+      }).catch(err => console.log("Su verisi çekilemedi", err));
 
-    fetch('http://localhost:8080/api/workout/today')
+    fetch('http://localhost:8080/api/workout/all')
       .then(res => res.json())
       .then((data: any[]) => {
         const todayLogs = data.filter(log => log.date && log.date.startsWith(todayString));
         setWorkoutSets(todayLogs.length);
-      }).catch(err => console.log("Antrenman çekilemedi", err));
+      }).catch(err => console.log("Antrenman verisi çekilemedi", err));
 
     fetch('http://localhost:8080/api/sleep/all')
       .then(res => res.json())
       .then((data: any[]) => {
         const todayLog = data.find(log => log.date && log.date.startsWith(todayString));
         if (todayLog) setSleepHours(todayLog.hours);
-      }).catch(err => console.log("Uyku çekilemedi", err));
-  }, []);
+      }).catch(err => console.log("Uyku verisi çekilemedi", err));
+  }, [todayString]);
 
   return (
     <div className="px-6 md:p-10 mt-2 md:mt-6 space-y-4 md:space-y-6 animate-in fade-in duration-500 max-w-5xl mx-auto flex flex-col justify-start pb-32">
       
-      {/* KARŞILAMA VE TARİH */}
       <div className="flex flex-col items-start px-2 mb-2">
         <span className="text-sm md:text-base font-extrabold opacity-60 uppercase tracking-wider mb-1">
           {todayFormatted}
@@ -86,7 +92,6 @@ export default function Dashboard() {
         </h2>
       </div>
 
-      {/* PROFIL KARTI */}
       <div 
         onClick={() => navigate('/profile')}
         className="relative w-full bg-white/40 backdrop-blur-xl rounded-[2rem] border border-white/60 shadow-[0_8px_30px_rgb(0,0,0,0.04)] cursor-pointer hover:bg-white/50 active:scale-[0.98] transition-all duration-300 overflow-hidden min-h-[100px] flex items-center justify-center"
@@ -102,7 +107,6 @@ export default function Dashboard() {
                 maskImage: 'linear-gradient(to right, rgba(0,0,0,1) 30%, rgba(0,0,0,0) 100%)'
               }}
             />
-            {/* DÜZELTME: pl-[30%] yerine pl-[40%] ve md:pl-[33%] kullanılarak yazı tam boşluğa ortalandı */}
             <div className="relative z-10 w-full flex items-center justify-between p-5 md:p-6 pl-[40%] md:pl-[33%]">
               <h2 className="text-xl md:text-3xl font-black tracking-tight leading-tight">
                 {profileData.name}
@@ -110,15 +114,15 @@ export default function Dashboard() {
               <div className="flex flex-col items-end gap-1 text-xs md:text-sm font-black opacity-80 shrink-0 ml-4">
                 <div className="flex justify-between w-20 md:w-24">
                   <span className="uppercase opacity-60">{t('height', 'BOY')}</span>
-                  <span>{profileData.height}</span>
+                  <span>{profileData.height > 0 ? profileData.height : '-'}</span>
                 </div>
                 <div className="flex justify-between w-20 md:w-24">
                   <span className="uppercase opacity-60">{t('weight', 'KİLO')}</span>
-                  <span>{profileData.weight}</span>
+                  <span>{profileData.weight > 0 ? profileData.weight : '-'}</span>
                 </div>
                 <div className="flex justify-between w-20 md:w-24">
                   <span className="uppercase opacity-60">{t('age', 'YAŞ')}</span>
-                  <span>{profileData.age}</span>
+                  <span>{profileData.age > 0 ? profileData.age : '-'}</span>
                 </div>
               </div>
             </div>
@@ -132,7 +136,6 @@ export default function Dashboard() {
         )}
       </div>
 
-      {/* 1. BESLENME WIDGET'I */}
       <div 
         onClick={() => navigate('/nutrition')}
         className="relative w-full bg-white/40 backdrop-blur-xl rounded-[2rem] p-5 md:p-6 border border-white/60 shadow-[0_8px_30px_rgb(0,0,0,0.04)] cursor-pointer hover:bg-white/50 active:scale-[0.98] transition-all duration-300"
@@ -161,7 +164,6 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* 2. SATIR: SU VE ANTRENMAN */}
       <div className="grid grid-cols-2 gap-4">
         <div 
           onClick={() => navigate('/water')}
@@ -186,7 +188,6 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* 3. SATIR: UYKU VE GELİŞİM */}
       <div className="grid grid-cols-2 gap-4">
         <div 
           onClick={() => navigate('/sleep')}
@@ -211,7 +212,6 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* 4. AYARLAR KARTI */}
       <div 
         onClick={() => navigate('/settings')}
         className="w-full bg-white/40 backdrop-blur-xl rounded-[2rem] p-5 border border-white/60 flex items-center gap-4 shadow-[0_8px_30px_rgb(0,0,0,0.04)] cursor-pointer hover:bg-white/50 active:scale-[0.98] transition-all duration-300"

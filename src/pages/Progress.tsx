@@ -2,8 +2,9 @@ import { useState, useEffect, useContext } from 'react';
 import { LineChart as LineChartIcon, Plus, Trash2, Calendar as CalendarIcon } from 'lucide-react';
 import { ThemeContext } from '../context/ThemeContext';
 import { useTranslation } from 'react-i18next';
-// YENİ: Bildirim sistemimizi içe aktarıyoruz
 import { ToastContext } from '../context/ToastContext';
+// 1. ADIM: Özel pencere bileşenimizi (modal) içe aktarıyoruz
+import ConfirmModal from '../components/ConfirmModal';
 
 // Gelen verinin yapısı
 interface ProgressRecord {
@@ -16,12 +17,14 @@ export default function Progress() {
   const { themePrimary } = useContext(ThemeContext);
   const { t, i18n } = useTranslation();
   
-  // YENİ: showToast fonksiyonumuzu çağırıyoruz
   const { showToast } = useContext(ToastContext);
 
   const [progressData, setProgressData] = useState<ProgressRecord[]>([]);
   const [weight, setWeight] = useState<number | ''>('');
   const [date, setDate] = useState<string>(new Date().toISOString().split('T')[0]);
+
+  // 2. ADIM: Silinmek istenen kaydın ID'sini tutacak State
+  const [deleteId, setDeleteId] = useState<number | null>(null);
 
   useEffect(() => {
     fetchProgressData();
@@ -46,7 +49,6 @@ export default function Progress() {
   };
 
   const handleSave = async () => {
-    // DÜZELTME: Çirkin alert yerine şık hata bildirimi (Toast)
     if (!weight || weight <= 0) {
       showToast(t('enterValue', 'Lütfen geçerli bir değer girin!'), 'error');
       return;
@@ -62,38 +64,42 @@ export default function Progress() {
       if (res.ok) {
         setWeight(''); 
         fetchProgressData(); 
-        // YENİ: Başarıyla kaydedildiğinde yeşil Toast mesajı
         showToast(t('successSaved', 'Başarıyla kaydedildi!'), 'success');
       } else {
         showToast(t('serverError', 'Kayıt işlemi başarısız oldu.'), 'error');
       }
     } catch (err) {
       console.error("Kilo eklenirken hata:", err);
-      // DÜZELTME: Sunucu hatası bildirimi
       showToast(t('serverError', 'Sunucuya bağlanılamadı!'), 'error');
     }
   };
 
-  const handleDelete = async (id: number) => {
-    // Silme onayı penceresi (Silme güvenliği için tarayıcı onayı olarak kalması idealdir)
-    if (!window.confirm("Bu ölçüm kaydını silmek istediğinize emin misiniz?")) return;
+  // 3. ADIM: Çöp kutusuna basıldığında doğrudan silmek yerine Modal'ı açmak için ID'yi kaydet
+  const handleDeleteRequest = (id: number) => {
+    setDeleteId(id);
+  };
+
+  // 4. ADIM: Modal'da "Tamam" butonuna basılınca çalışacak asıl silme fonksiyonu
+  const confirmDelete = async () => {
+    if (deleteId === null) return;
 
     try {
-      const res = await fetch(`http://localhost:8080/api/progress/delete/${id}`, {
+      const res = await fetch(`http://localhost:8080/api/progress/delete/${deleteId}`, {
         method: 'DELETE'
       });
 
       if (res.ok) {
-        setProgressData(prevData => prevData.filter(record => record.id !== id));
-        // YENİ: Başarılı silme bildirimi
+        setProgressData(prevData => prevData.filter(record => record.id !== deleteId));
         showToast(t('successSaved', 'Başarıyla silindi!'), 'success');
       } else {
-        // DÜZELTME: Çirkin alert yerine şık hata bildirimi
         showToast(t('serverError', 'Silme işlemi başarısız oldu.'), 'error');
       }
     } catch (err) {
       console.error("Kilo kaydı silinirken hata:", err);
       showToast(t('serverError', 'Sunucu hatası!'), 'error');
+    } finally {
+      // İşlem bitince (başarılı ya da başarısız) Modal'ı kapat
+      setDeleteId(null);
     }
   };
 
@@ -120,8 +126,16 @@ export default function Progress() {
   const paddingX = 10; // Kenar boşluğu (Yüzde olarak)
 
   return (
-    <div className="p-6 md:p-10 space-y-6 pb-32 md:pb-10 max-w-5xl mx-auto animate-in fade-in duration-500">
+    <div className="p-6 md:p-10 space-y-6 pb-32 md:pb-10 max-w-5xl mx-auto animate-in fade-in duration-500 relative">
       
+      {/* YENİ: Uyarı Penceremiz. deleteId doluysa ekranda belirir */}
+      <ConfirmModal 
+        isOpen={deleteId !== null} 
+        message={t('confirmDeleteProgress', 'Bu ölçüm kaydını silmek istediğinize emin misiniz?')} 
+        onConfirm={confirmDelete} 
+        onCancel={() => setDeleteId(null)} 
+      />
+
       <div className="flex items-center gap-3 mb-8">
         <LineChartIcon size={36} strokeWidth={2.5} style={{ color: themePrimary }} />
         <div>
@@ -268,7 +282,7 @@ export default function Progress() {
                     </div>
                     
                     <button 
-                      onClick={() => handleDelete(record.id)}
+                      onClick={() => handleDeleteRequest(record.id)} // DÜZELTME: Artık doğrudan silmek yerine pencereyi açıyor
                       className="p-3 bg-red-500/10 hover:bg-red-500/20 rounded-xl text-red-600 active:scale-90 transition-all"
                       title="Kaydı Sil"
                     >

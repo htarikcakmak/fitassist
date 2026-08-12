@@ -161,7 +161,30 @@ const resources = {
       loginSuccess: "Başarıyla giriş yapıldı!",
       loginError: "Hata! Lütfen bilgilerinizi kontrol edin.",
       resetLinkSent: "Şifre sıfırlama bağlantısı gönderildi!",
-      serverError: "Sunucuya bağlanılamadı!"
+      serverError: "Sunucuya bağlanılamadı!",
+
+      /* --- YENİ EKLENEN ÇEVİRİLER --- */
+      areYouSure: "Emin misin?",
+      confirm: "Tamam",
+      cancel: "İptal",
+      confirmDeleteWater: "Bu su kaydını silmek istediğinize emin misiniz?",
+      confirmDeleteProgress: "Bu ölçüm kaydını silmek istediğinize emin misiniz?",
+      confirmDeleteWorkout: "Bu antrenmanı silmek istediğinize emin misiniz?",
+      rememberMe: "Beni Hatırla",
+      dbSaveError: "Veritabanına kaydedilemedi! Lütfen tekrar deneyin.",
+      serverConnectionLost: "Sunucu ile bağlantı koptu!",
+      editProfile: "Profili Düzenle",
+      logout: "Çıkış Yap",
+      heightLabel: "Boy",
+      weightLabel: "Kilo",
+      ageLabel: "Yaş",
+      goalLabel: "Ana Hedef",
+      goalLoseWeight: "Kilo Verme (Definisyon)",
+      goalGainMuscle: "Kas Kazanımı (Bulk)",
+      goalRecomposition: "Vücut Kompozisyonu",
+      saveProfileBtn: "Profili Güncelle",
+      backToLogin: "Giriş Ekranına Dön",
+      sendResetLink: "Bağlantı Gönder"
     }
   },
   en: {
@@ -325,7 +348,30 @@ const resources = {
       loginSuccess: "Logged in successfully!",
       loginError: "Error! Please check your credentials.",
       resetLinkSent: "Password reset link sent!",
-      serverError: "Could not connect to server!"
+      serverError: "Could not connect to server!",
+
+      /* --- YENİ EKLENEN ÇEVİRİLER --- */
+      areYouSure: "Are you sure?",
+      confirm: "Confirm",
+      cancel: "Cancel",
+      confirmDeleteWater: "Are you sure you want to delete this water record?",
+      confirmDeleteProgress: "Are you sure you want to delete this measurement?",
+      confirmDeleteWorkout: "Are you sure you want to delete this workout?",
+      rememberMe: "Remember Me",
+      dbSaveError: "Could not save to database! Please try again.",
+      serverConnectionLost: "Connection to server lost!",
+      editProfile: "Edit Profile",
+      logout: "Logout",
+      heightLabel: "Height",
+      weightLabel: "Weight",
+      ageLabel: "Age",
+      goalLabel: "Main Goal",
+      goalLoseWeight: "Weight Loss (Cut)",
+      goalGainMuscle: "Muscle Gain (Bulk)",
+      goalRecomposition: "Body Recomposition",
+      saveProfileBtn: "Update Profile",
+      backToLogin: "Back to Login",
+      sendResetLink: "Send Link"
     }
   },
   es: {
@@ -487,7 +533,30 @@ const resources = {
       loginSuccess: "¡Inicio de sesión exitoso!",
       loginError: "¡Error! Por favor verifica tus datos.",
       resetLinkSent: "¡Enlace de recuperación enviado!",
-      serverError: "¡No se pudo conectar al servidor!"
+      serverError: "¡No se pudo conectar al servidor!",
+
+      /* --- YENİ EKLENEN ÇEVİRİLER --- */
+      areYouSure: "¿Estás seguro?",
+      confirm: "Confirmar",
+      cancel: "Cancelar",
+      confirmDeleteWater: "¿Estás seguro de que quieres eliminar este registro de agua?",
+      confirmDeleteProgress: "¿Estás seguro de que quieres eliminar esta medida?",
+      confirmDeleteWorkout: "¿Estás seguro de que quieres eliminar este entrenamiento?",
+      rememberMe: "Recuérdame",
+      dbSaveError: "¡No se pudo guardar en la base de datos! Inténtalo de nuevo.",
+      serverConnectionLost: "¡Se perdió la conexión con el servidor!",
+      editProfile: "Editar Perfil",
+      logout: "Cerrar Sesión",
+      heightLabel: "Altura",
+      weightLabel: "Peso",
+      ageLabel: "Edad",
+      goalLabel: "Objetivo Principal",
+      goalLoseWeight: "Pérdida de Peso (Definición)",
+      goalGainMuscle: "Ganancia Muscular (Volumen)",
+      goalRecomposition: "Recomposición Corporal",
+      saveProfileBtn: "Actualizar Perfil",
+      backToLogin: "Volver al Inicio",
+      sendResetLink: "Enviar Enlace"
     }
   },
   fr: {
@@ -649,7 +718,30 @@ const resources = {
       loginSuccess: "Connexion réussie !",
       loginError: "Erreur ! Veuillez vérifier vos informations.",
       resetLinkSent: "Lien de réinitialisation envoyé !",
-      serverError: "Impossible de se connecter au serveur !"
+      serverError: "Impossible de se connecter au serveur !",
+
+      /* --- YENİ EKLENEN ÇEVİRİLER --- */
+      areYouSure: "Êtes-vous sûr ?",
+      confirm: "Confirmer",
+      cancel: "Annuler",
+      confirmDeleteWater: "Voulez-vous vraiment supprimer cet enregistrement d'eau ?",
+      confirmDeleteProgress: "Voulez-vous vraiment supprimer cette mesure ?",
+      confirmDeleteWorkout: "Voulez-vous vraiment supprimer cet entraînement ?",
+      rememberMe: "Se souvenir de moi",
+      dbSaveError: "Impossible d'enregistrer dans la base de données ! Veuillez réessayer.",
+      serverConnectionLost: "Connexion au serveur perdue !",
+      editProfile: "Modifier le Profil",
+      logout: "Se Déconnecter",
+      heightLabel: "Taille",
+      weightLabel: "Poids",
+      ageLabel: "Âge",
+      goalLabel: "Objectif Principal",
+      goalLoseWeight: "Perte de Poids (Sèche)",
+      goalGainMuscle: "Prise de Masse (Prise de masse)",
+      goalRecomposition: "Recomposition Corporelle",
+      saveProfileBtn: "Mettre à jour le Profil",
+      backToLogin: "Retour à la Connexion",
+      sendResetLink: "Envoyer le Lien"
     }
   },
   it: {
@@ -811,7 +903,30 @@ const resources = {
       loginSuccess: "Accesso effettuato con successo!",
       loginError: "Errore! Controlla i tuoi dati.",
       resetLinkSent: "Link di ripristino inviato!",
-      serverError: "Impossibile connettersi al server!"
+      serverError: "Impossibile connettersi al server!",
+
+      /* --- YENİ EKLENEN ÇEVİRİLER --- */
+      areYouSure: "Sei sicuro?",
+      confirm: "Conferma",
+      cancel: "Annulla",
+      confirmDeleteWater: "Sei sicuro di voler eliminare questo record di acqua?",
+      confirmDeleteProgress: "Sei sicuro di voler eliminare questa misurazione?",
+      confirmDeleteWorkout: "Sei sicuro di voler eliminare questo allenamento?",
+      rememberMe: "Ricordami",
+      dbSaveError: "Impossibile salvare nel database! Riprova.",
+      serverConnectionLost: "Connessione al server persa!",
+      editProfile: "Modifica Profilo",
+      logout: "Esci",
+      heightLabel: "Altezza",
+      weightLabel: "Peso",
+      ageLabel: "Età",
+      goalLabel: "Obiettivo Principale",
+      goalLoseWeight: "Perdita di Peso (Definizione)",
+      goalGainMuscle: "Aumento Massa Muscolare (Massa)",
+      goalRecomposition: "Ricomp. Corporea",
+      saveProfileBtn: "Aggiorna Profilo",
+      backToLogin: "Torna al Login",
+      sendResetLink: "Invia Link"
     }
   },
   de: {
@@ -973,7 +1088,30 @@ const resources = {
       loginSuccess: "Erfolgreich angemeldet!",
       loginError: "Fehler! Bitte überprüfen Sie Ihre Daten.",
       resetLinkSent: "Link zum Zurücksetzen gesendet!",
-      serverError: "Verbindung zum Server fehlgeschlagen!"
+      serverError: "Verbindung zum Server fehlgeschlagen!",
+
+      /* --- YENİ EKLENEN ÇEVİRİLER --- */
+      areYouSure: "Bist du sicher?",
+      confirm: "Bestätigen",
+      cancel: "Abbrechen",
+      confirmDeleteWater: "Möchtest du diesen Wassereintrag wirklich löschen?",
+      confirmDeleteProgress: "Möchtest du diesen Messwert wirklich löschen?",
+      confirmDeleteWorkout: "Möchtest du dieses Training wirklich löschen?",
+      rememberMe: "Angemeldet bleiben",
+      dbSaveError: "Konnte nicht in der Datenbank gespeichert werden! Bitte versuche es erneut.",
+      serverConnectionLost: "Verbindung zum Server verloren!",
+      editProfile: "Profil bearbeiten",
+      logout: "Abmelden",
+      heightLabel: "Größe",
+      weightLabel: "Gewicht",
+      ageLabel: "Alter",
+      goalLabel: "Hauptziel",
+      goalLoseWeight: "Gewichtsverlust (Defi)",
+      goalGainMuscle: "Muskelaufbau (Masse)",
+      goalRecomposition: "Körperrekomposition",
+      saveProfileBtn: "Profil aktualisieren",
+      backToLogin: "Zurück zum Login",
+      sendResetLink: "Link senden"
     }
   }
 };

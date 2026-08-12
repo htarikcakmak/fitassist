@@ -2,14 +2,11 @@ import { useState, useContext, useRef, useEffect } from 'react';
 import { User, Mail, Lock, Camera, LogOut, ArrowRight, Ruler, Weight, Target, Save, Edit3, Calendar } from 'lucide-react';
 import { ThemeContext } from '../context/ThemeContext';
 import { useTranslation } from 'react-i18next';
-// YENİ: Bildirim (Toast) sistemi içe aktarılıyor
 import { ToastContext } from '../context/ToastContext';
 
 export default function Profile() {
   const { themePrimary } = useContext(ThemeContext);
   const { t } = useTranslation();
-  
-  // YENİ: Bildirim fonksiyonu çağrılıyor
   const { showToast } = useContext(ToastContext);
 
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -17,7 +14,9 @@ export default function Profile() {
   const [isEditing, setIsEditing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // --- KULLANICI VERİLERİ ---
+  // Beni Hatırla state'i
+  const [rememberMe, setRememberMe] = useState(false);
+
   const [userId, setUserId] = useState<number | null>(null);
   const [name, setName] = useState(''); 
   const [email, setEmail] = useState('');
@@ -32,12 +31,14 @@ export default function Profile() {
   const [tempPassword, setTempPassword] = useState('');
 
   useEffect(() => {
-    const storedUser = localStorage.getItem('fitassist_user');
+    // Hem kalıcı hafızayı hem de oturum hafızasını kontrol ediyoruz
+    const storedUser = localStorage.getItem('fitassist_user') || sessionStorage.getItem('fitassist_user');
+    
     if (storedUser) {
       const user = JSON.parse(storedUser);
       setUserId(user.id);
-      setName(user.name);
-      setEmail(user.email);
+      setName(user.name || '');
+      setEmail(user.email || '');
       setHeight(user.height || '');
       setWeight(user.weight || '');
       setAge(user.age || ''); 
@@ -50,24 +51,12 @@ export default function Profile() {
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Manuel Doğrulama (Çirkin HTML balonları yerine kendi şık Toast bildirimlerimiz)
     if (authMode === 'login' && (!tempEmail || !tempPassword)) {
       showToast(t('fillAllFields', 'Lütfen tüm alanları doldurun!'), 'error');
       return;
     }
     if (authMode === 'register' && (!tempName || !tempEmail || !tempPassword)) {
       showToast(t('fillAllFields', 'Lütfen tüm alanları doldurun!'), 'error');
-      return;
-    }
-    if (authMode === 'forgotPassword' && !tempEmail) {
-      showToast(t('fillAllFields', 'Lütfen tüm alanları doldurun!'), 'error');
-      return;
-    }
-
-    if (authMode === 'forgotPassword') {
-      showToast(t('resetLinkSent', 'Şifre sıfırlama bağlantısı gönderildi!'), 'success');
-      setAuthMode('login');
-      setTempEmail('');
       return;
     }
 
@@ -91,13 +80,21 @@ export default function Profile() {
 
       const userData = await response.json(); 
       setUserId(userData.id);
-      setName(userData.name);
-      setEmail(userData.email);
+      setName(userData.name || '');
+      setEmail(userData.email || '');
+      setHeight(userData.height || '');
+      setWeight(userData.weight || '');
+      setAge(userData.age || '');
+      setGoal(userData.goal || 'Vücut Kompozisyonu');
+      if (userData.imageUrl) setProfilePic(userData.imageUrl);
+
       setIsLoggedIn(true);
 
-      localStorage.setItem('fitassist_user', JSON.stringify(userData));
-      setTempPassword('');
+      // Beni hatırla seçeneğine göre veriyi ilgili hafızaya kaydediyoruz
+      const storage = rememberMe ? localStorage : sessionStorage;
+      storage.setItem('fitassist_user', JSON.stringify(userData));
       
+      setTempPassword('');
       showToast(t('loginSuccess', 'Başarıyla giriş yapıldı!'), 'success');
 
     } catch (error) {
@@ -110,14 +107,51 @@ export default function Profile() {
     setIsLoggedIn(false);
     setAuthMode('login');
     setIsEditing(false);
+    // Çıkış yaparken her iki hafızayı da temizliyoruz
     localStorage.removeItem('fitassist_user');
+    sessionStorage.removeItem('fitassist_user');
   };
 
-  const handleSaveProfile = () => {
-    const updatedUser = { id: userId, name, email, height, weight, age, goal, imageUrl: profilePic };
-    localStorage.setItem('fitassist_user', JSON.stringify(updatedUser)); 
-    setIsEditing(false);
-    showToast(t('successSaved', 'Başarıyla kaydedildi!'), 'success');
+  const handleSaveProfile = async () => {
+    const updatedUser = { 
+      id: userId, 
+      name: name, 
+      email: email, 
+      height: height ? Number(height) : null, 
+      weight: weight ? Number(weight) : null, 
+      age: age ? Number(age) : null, 
+      goal: goal, 
+      imageUrl: profilePic 
+    };
+
+    try {
+      const response = await fetch(`http://localhost:8080/api/users/update/${userId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedUser)
+      });
+
+      if (!response.ok) {
+        showToast("Veritabanına kaydedilemedi! Lütfen tekrar deneyin.", "error");
+        return; 
+      }
+
+      const savedData = await response.json();
+
+      // Güncellenen veriyi mevcut hafızaya (kalıcı veya oturum) üzerine yazıyoruz
+      if (localStorage.getItem('fitassist_user')) {
+        localStorage.setItem('fitassist_user', JSON.stringify(savedData));
+      } else {
+        sessionStorage.setItem('fitassist_user', JSON.stringify(savedData));
+      }
+
+      setIsEditing(false);
+      showToast(t('successSaved', 'Başarıyla kaydedildi!'), 'success');
+
+    } catch (err) {
+      console.error("Arka plan güncelleme hatası:", err);
+      showToast("Sunucu ile bağlantı koptu!", "error");
+    }
   };
 
   const handleImageClick = () => fileInputRef.current?.click();
@@ -125,8 +159,14 @@ export default function Profile() {
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const imageUrl = URL.createObjectURL(file);
-      setProfilePic(imageUrl);
+      // Fotoğrafı geçici URL yerine Base64 formatına çevirerek kaydediyoruz
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        // Okuma işlemi bittiğinde elde edilen veri (Base64 String)
+        const base64String = reader.result as string;
+        setProfilePic(base64String);
+      };
+      reader.readAsDataURL(file);
     }
   };
 
@@ -139,18 +179,14 @@ export default function Profile() {
             <h2 className="text-3xl font-black tracking-tight mb-2">
               {authMode === 'login' && t('loginTitle', 'Giriş Yap')}
               {authMode === 'register' && t('registerTitle', 'Hesap Oluştur')}
-              {authMode === 'forgotPassword' && t('forgotPasswordTitle', 'Şifreni Sıfırla')}
             </h2>
             <p className="text-sm font-bold opacity-70">
               {authMode === 'login' && t('loginDesc', 'Verilerine ulaşmak için giriş yap.')}
               {authMode === 'register' && t('registerDesc', 'FitAssist ile hedeflerine ulaşmaya başla.')}
-              {authMode === 'forgotPassword' && t('forgotPasswordDesc', 'Kayıtlı e-posta adresini gir, sana bir sıfırlama bağlantısı gönderelim.')}
             </p>
           </div>
 
-          {/* DÜZELTME: Tarayıcı uyarı balonlarını engellemek için noValidate eklendi */}
           <form onSubmit={handleAuth} noValidate className="space-y-4">
-            
             {authMode === 'register' && (
               <div className="relative">
                 <User size={20} className="absolute left-4 top-1/2 -translate-y-1/2 opacity-50" color={themePrimary} />
@@ -177,51 +213,50 @@ export default function Profile() {
               />
             </div>
 
-            {authMode !== 'forgotPassword' && (
-              <div className="relative">
-                <Lock size={20} className="absolute left-4 top-1/2 -translate-y-1/2 opacity-50" color={themePrimary} />
-                <input 
-                  type="password" 
-                  value={tempPassword} 
-                  onChange={(e) => setTempPassword(e.target.value)} 
-                  placeholder={t('passwordPlaceholder', 'Şifre')} 
-                  className="w-full bg-white/60 border border-white/80 rounded-2xl pl-12 pr-4 py-4 font-bold focus:outline-none focus:ring-2 transition-all shadow-inner" 
-                  style={{ '--tw-ring-color': themePrimary } as React.CSSProperties} 
-                />
-              </div>
-            )}
+            <div className="relative">
+              <Lock size={20} className="absolute left-4 top-1/2 -translate-y-1/2 opacity-50" color={themePrimary} />
+              <input 
+                type="password" 
+                value={tempPassword} 
+                onChange={(e) => setTempPassword(e.target.value)} 
+                placeholder={t('passwordPlaceholder', 'Şifre')} 
+                className="w-full bg-white/60 border border-white/80 rounded-2xl pl-12 pr-4 py-4 font-bold focus:outline-none focus:ring-2 transition-all shadow-inner" 
+                style={{ '--tw-ring-color': themePrimary } as React.CSSProperties} 
+              />
+            </div>
 
             {authMode === 'login' && (
-              <div className="text-right">
-                <button 
-                  type="button" 
-                  onClick={() => setAuthMode('forgotPassword')} 
-                  className="text-xs font-extrabold opacity-70 hover:opacity-100 transition-opacity" 
-                  style={{ color: themePrimary }}
-                >
-                  {t('forgotPassword', 'Şifremi Unuttum?')}
-                </button>
+              <div className="flex items-center justify-between mt-2 px-1">
+                <label className="flex items-center gap-2 cursor-pointer group">
+                  <div className="relative flex items-center justify-center w-5 h-5 rounded border-2 border-gray-400 group-hover:border-gray-500 transition-colors">
+                    <input 
+                      type="checkbox" 
+                      checked={rememberMe}
+                      onChange={(e) => setRememberMe(e.target.checked)}
+                      className="absolute opacity-0 w-0 h-0"
+                    />
+                    {rememberMe && (
+                      <div className="w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: themePrimary }}></div>
+                    )}
+                  </div>
+                  <span className="text-sm font-bold opacity-70 group-hover:opacity-100 transition-opacity select-none">
+                    {t('rememberMe', 'Beni Hatırla')}
+                  </span>
+                </label>
               </div>
             )}
 
-            <button type="submit" className="w-full mt-2 py-4 rounded-2xl bg-white hover:bg-white/90 font-black active:scale-95 transition-all flex items-center justify-center gap-2 shadow-sm border border-white/80" style={{ color: themePrimary }}>
+            <button type="submit" className="w-full mt-4 py-4 rounded-2xl bg-white hover:bg-white/90 border border-white/80 font-black active:scale-95 transition-all flex items-center justify-center gap-2 shadow-sm" style={{ color: themePrimary }}>
               {authMode === 'login' && t('loginBtn', 'Giriş Yap')}
               {authMode === 'register' && t('registerBtn', 'Kayıt Ol')}
-              {authMode === 'forgotPassword' && t('sendResetLink', 'Bağlantı Gönder')}
               <ArrowRight size={20} strokeWidth={2.5} />
             </button>
           </form>
 
           <div className="mt-6 text-center">
-            {authMode === 'forgotPassword' ? (
-               <button onClick={() => setAuthMode('login')} className="text-sm font-extrabold opacity-80 hover:opacity-100 transition-opacity" style={{ color: themePrimary }}>
-                 {t('backToLogin', 'Giriş Ekranına Dön')}
-               </button>
-            ) : (
-              <button onClick={() => setAuthMode(authMode === 'login' ? 'register' : 'login')} className="text-sm font-extrabold opacity-80 hover:opacity-100 transition-opacity" style={{ color: themePrimary }}>
-                {authMode === 'login' ? t('noAccount', 'Hesabın yok mu? Kayıt Ol') : t('alreadyHaveAccount', 'Zaten hesabın var mı? Giriş Yap')}
-              </button>
-            )}
+            <button onClick={() => setAuthMode(authMode === 'login' ? 'register' : 'login')} className="text-sm font-extrabold opacity-80 hover:opacity-100 transition-opacity" style={{ color: themePrimary }}>
+              {authMode === 'login' ? t('noAccount', 'Hesabın yok mu? Kayıt Ol') : t('alreadyHaveAccount', 'Zaten hesabın var mı? Giriş Yap')}
+            </button>
           </div>
         </div>
       ) : (

@@ -2,8 +2,9 @@ import { useState, useEffect, useContext } from 'react';
 import { Dumbbell, Plus, Trash2, History, CalendarCheck } from 'lucide-react';
 import { ThemeContext } from '../context/ThemeContext';
 import { useTranslation } from 'react-i18next';
-// YENİ: Bildirim sistemimizi içe aktarıyoruz
 import { ToastContext } from '../context/ToastContext';
+// 1. ADIM: Özel pencere bileşenimizi (modal) içe aktarıyoruz
+import ConfirmModal from '../components/ConfirmModal';
 
 interface WorkoutRecord {
   id: number;
@@ -19,7 +20,6 @@ export default function Workout() {
   const { themePrimary } = useContext(ThemeContext);
   const { t, i18n } = useTranslation();
   
-  // YENİ: showToast fonksiyonumuzu çağırıyoruz
   const { showToast } = useContext(ToastContext);
 
   const [workouts, setWorkouts] = useState<WorkoutRecord[]>([]);
@@ -30,6 +30,9 @@ export default function Workout() {
   
   const [category, setCategory] = useState<string>('Push');
   const [activeTab, setActiveTab] = useState<'today' | 'history'>('today');
+
+  // 2. ADIM: Silinmek istenen kaydın ID'sini tutacak State
+  const [deleteId, setDeleteId] = useState<number | null>(null);
 
   useEffect(() => {
     fetchWorkouts();
@@ -49,7 +52,6 @@ export default function Workout() {
   };
 
   const handleSave = async () => {
-    // DÜZELTME: Çirkin alert yerine şık Toast error mesajı
     if (!exerciseName || weight === '' || sets === '' || reps === '' || !category) {
       showToast(t('alertFillAll', 'Lütfen tüm alanları doldurun ve bir kategori seçin!'), 'error'); 
       return;
@@ -60,7 +62,8 @@ export default function Workout() {
       category, 
       weight: Number(weight),
       sets: Number(sets),
-      reps: Number(reps)
+      reps: Number(reps),
+      date: new Date().toISOString().split('T')[0]
     };
 
     try {
@@ -70,18 +73,17 @@ export default function Workout() {
         body: JSON.stringify(payload)
       });
 
-      if (res.ok) {
+      if (res.ok || res.status === 200 || res.status === 201) {
         setExerciseName('');
         setWeight('');
         setSets('');
         setReps('');
         fetchWorkouts();
         setActiveTab('today');
-        // YENİ: Başarıyla kaydedildiğinde yeşil Toast mesajı
         showToast(t('successSaved', 'Başarıyla kaydedildi!'), 'success');
       } else {
-        // DÜZELTME: Çirkin alert yerine şık Toast error mesajı
-        showToast(t('alertServerError', 'Kayıt başarısız! Sunucuyu kontrol edin.'), 'error');
+        fetchWorkouts();
+        showToast(t('alertServerError', 'Kayıt sırasında bir uyarı oluştu.'), 'info');
       }
     } catch (err) {
       console.error("Add error:", err);
@@ -89,17 +91,22 @@ export default function Workout() {
     }
   };
 
-  const handleDelete = async (id: number) => {
-    // Silme onayı penceresi (Şimdilik tarayıcı onayı olarak kalması silme güvenliği için iyidir)
-    if (!window.confirm("Bu antrenmanı silmek istediğine emin misin?")) return; 
+  // 3. ADIM: Çöp kutusuna basıldığında doğrudan silmek yerine Modal'ı açmak için ID'yi kaydet
+  const handleDeleteRequest = (id: number) => {
+    setDeleteId(id);
+  };
+
+  // 4. ADIM: Modal'da "Tamam" butonuna basılınca çalışacak asıl silme fonksiyonu
+  const confirmDelete = async () => {
+    if (deleteId === null) return;
 
     try {
-      const res = await fetch(`http://localhost:8080/api/workout/delete/${id}`, {
+      const res = await fetch(`http://localhost:8080/api/workout/delete/${deleteId}`, {
         method: 'DELETE'
       });
 
       if (res.ok) {
-        setWorkouts(prev => prev.filter(w => w.id !== id));
+        setWorkouts(prev => prev.filter(w => w.id !== deleteId));
         showToast(t('successSaved', 'Başarıyla silindi!'), 'success');
       } else {
         showToast(t('serverError', 'Silme işlemi başarısız oldu.'), 'error');
@@ -107,6 +114,9 @@ export default function Workout() {
     } catch (err) {
       console.error("Delete error:", err);
       showToast(t('serverError', 'Sunucu hatası!'), 'error');
+    } finally {
+      // İşlem bitince Modal'ı kapat
+      setDeleteId(null);
     }
   };
 
@@ -132,8 +142,16 @@ export default function Workout() {
   const sortedHistoryDates = Object.keys(groupedHistory).sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
 
   return (
-    <div className="p-6 md:p-10 space-y-6 pb-32 md:pb-10 max-w-5xl mx-auto animate-in fade-in duration-500">
+    <div className="p-6 md:p-10 space-y-6 pb-32 md:pb-10 max-w-5xl mx-auto animate-in fade-in duration-500 relative">
       
+      {/* YENİ: Uyarı Penceremiz. deleteId doluysa ekranda belirir */}
+      <ConfirmModal 
+        isOpen={deleteId !== null} 
+        message={t('confirmDeleteWorkout', 'Bu antrenmanı silmek istediğinize emin misiniz?')} 
+        onConfirm={confirmDelete} 
+        onCancel={() => setDeleteId(null)} 
+      />
+
       <div className="flex items-center gap-3 mb-8">
         <Dumbbell size={36} strokeWidth={2.5} style={{ color: themePrimary }} />
         <div>
@@ -255,7 +273,9 @@ export default function Workout() {
                           <span className="bg-white/50 px-3 py-1 rounded-lg border border-white/40">{workout.reps} {t('repsShort', 'Tkr')}</span>
                         </div>
                       </div>
-                      <button onClick={() => handleDelete(workout.id)} className="p-3 bg-red-500/10 hover:bg-red-500/20 rounded-xl text-red-600 active:scale-90 transition-all shrink-0 ml-4">
+                      
+                      {/* DÜZELTME: Doğrudan silmek yerine pencereyi tetikliyor */}
+                      <button onClick={() => handleDeleteRequest(workout.id)} className="p-3 bg-red-500/10 hover:bg-red-500/20 rounded-xl text-red-600 active:scale-90 transition-all shrink-0 ml-4">
                         <Trash2 size={20} />
                       </button>
                     </div>
@@ -298,7 +318,9 @@ export default function Workout() {
                                 <span className="bg-white/40 px-2 py-1 rounded-md">{workout.reps} {t('repsShort', 'Tkr')}</span>
                               </div>
                             </div>
-                            <button onClick={() => handleDelete(workout.id)} className="p-2.5 bg-red-500/5 hover:bg-red-500/10 rounded-lg text-red-500 active:scale-90 transition-all shrink-0 ml-4">
+                            
+                            {/* DÜZELTME: Doğrudan silmek yerine pencereyi tetikliyor */}
+                            <button onClick={() => handleDeleteRequest(workout.id)} className="p-2.5 bg-red-500/5 hover:bg-red-500/10 rounded-lg text-red-500 active:scale-90 transition-all shrink-0 ml-4">
                               <Trash2 size={16} />
                             </button>
                           </div>

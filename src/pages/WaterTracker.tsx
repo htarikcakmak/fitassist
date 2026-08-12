@@ -3,6 +3,8 @@ import { Droplet, Plus, Trash2, BarChart3, Edit3 } from 'lucide-react';
 import { ThemeContext } from '../context/ThemeContext';
 import { useTranslation } from 'react-i18next';
 import { ToastContext } from '../context/ToastContext';
+// YENİ: Yaptığımız şık pencereyi içe aktarıyoruz
+import ConfirmModal from '../components/ConfirmModal';
 
 interface WaterRecord {
   id: number;
@@ -13,11 +15,13 @@ interface WaterRecord {
 export default function Water() {
   const { themePrimary } = useContext(ThemeContext);
   const { t, i18n } = useTranslation();
-  
   const { showToast } = useContext(ToastContext);
 
   const [waterData, setWaterData] = useState<WaterRecord[]>([]);
   const [amount, setAmount] = useState<number | ''>('');
+  
+  // YENİ: Silinmek üzere seçilen kaydın ID'sini tutacak State
+  const [deleteId, setDeleteId] = useState<number | null>(null);
   
   const [dailyGoal, setDailyGoal] = useState<number>(() => {
     const saved = localStorage.getItem('dailyWaterGoal');
@@ -43,21 +47,17 @@ export default function Water() {
 
   const handleSave = async (quickAmount?: number) => {
     const valueToAdd = quickAmount || Number(amount);
-    
     if (!valueToAdd || valueToAdd <= 0) {
       showToast(t('alertEnterValidAmount', 'Lütfen geçerli bir miktar girin!'), 'error');
       return;
     }
-
     const today = new Date().toISOString().split('T')[0];
-
     try {
       const res = await fetch('http://localhost:8080/api/water/add', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ amount: valueToAdd, date: today })
       });
-
       if (res.ok) {
         setAmount(''); 
         fetchWaterData(); 
@@ -66,28 +66,34 @@ export default function Water() {
         showToast(t('serverError', 'Kayıt işlemi başarısız oldu.'), 'error');
       }
     } catch (err) {
-      console.error("Add error:", err);
       showToast(t('serverError', 'Sunucuya bağlanılamadı!'), 'error');
     }
   };
 
-  const handleDelete = async (id: number) => {
-    if (!window.confirm("Bu su kaydını silmek istediğinize emin misiniz?")) return;
+  // YENİ: Çöp kutusuna basınca doğrudan silmek yerine Modal'ı açmak için ID'yi kaydediyoruz
+  const handleDeleteRequest = (id: number) => {
+    setDeleteId(id);
+  };
+
+  // YENİ: Modal'da "Tamam" butonuna basınca asıl silme işlemini yapacak fonksiyon
+  const confirmDelete = async () => {
+    if (deleteId === null) return;
 
     try {
-      const res = await fetch(`http://localhost:8080/api/water/delete/${id}`, {
+      const res = await fetch(`http://localhost:8080/api/water/delete/${deleteId}`, {
         method: 'DELETE'
       });
 
       if (res.ok) {
-        setWaterData(prevData => prevData.filter(record => record.id !== id));
+        setWaterData(prevData => prevData.filter(record => record.id !== deleteId));
         showToast(t('successSaved', 'Başarıyla silindi!'), 'success');
       } else {
-        showToast(t('serverError', 'Silme işlemi başarısız oldu. Lütfen tekrar deneyin.'), 'error');
+        showToast(t('serverError', 'Silme işlemi başarısız oldu.'), 'error');
       }
     } catch (err) {
-      console.error("Delete error:", err);
       showToast(t('serverError', 'Sunucuya bağlanılamadı!'), 'error');
+    } finally {
+      setDeleteId(null); // İşlem bitince Modal'ı kapat
     }
   };
 
@@ -100,7 +106,6 @@ export default function Water() {
   const todayString = new Date().toISOString().split('T')[0];
   const todaysRecords = waterData.filter(r => r.date === todayString);
   const totalWaterToday = todaysRecords.reduce((sum, record) => sum + record.amount, 0);
-  
   const progressPercent = dailyGoal > 0 ? Math.min((totalWaterToday / dailyGoal) * 100, 100) : 0;
 
   const last7Days = Array.from({ length: 7 }).map((_, i) => {
@@ -119,8 +124,16 @@ export default function Water() {
   });
 
   return (
-    <div className="p-6 md:p-10 space-y-6 pb-32 md:pb-10 max-w-5xl mx-auto animate-in fade-in duration-500">
+    <div className="p-6 md:p-10 space-y-6 pb-32 md:pb-10 max-w-5xl mx-auto animate-in fade-in duration-500 relative">
       
+      {/* YENİ: Modal Bileşenimizi ekliyoruz */}
+      <ConfirmModal 
+        isOpen={deleteId !== null} 
+        message={t('confirmDeleteWater', 'Bu su kaydını silmek istediğinize emin misiniz?')} 
+        onConfirm={confirmDelete} 
+        onCancel={() => setDeleteId(null)} 
+      />
+
       <div className="flex items-center gap-3 mb-8">
         <Droplet size={36} strokeWidth={2.5} style={{ color: themePrimary }} />
         <div>
@@ -132,17 +145,13 @@ export default function Water() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        
         <div className="lg:col-span-7 space-y-6">
-          
           <div className="bg-white/40 backdrop-blur-xl rounded-[2rem] p-6 shadow-sm border border-white/60">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end mb-4 gap-4">
               <h3 className="text-xl font-extrabold" style={{ color: themePrimary }}>{t('dailyGoal', 'Günlük Hedef')}</h3>
               
               <div className="flex items-center justify-between w-full sm:w-fit gap-1.5 bg-white/60 px-4 py-2 rounded-xl border border-white/80 focus-within:border-blue-400 transition-all">
                 <span className="font-black text-2xl whitespace-nowrap">{totalWaterToday} /</span>
-                
-                {/* DÜZELTME: Okları gizleyen Tailwind CSS sınıfları eklendi */}
                 <input 
                   type="number" 
                   value={dailyGoal || ''}
@@ -150,7 +159,6 @@ export default function Water() {
                   className="w-full max-w-[5rem] font-black text-2xl bg-transparent focus:outline-none text-center [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                   style={{ color: themePrimary }}
                 />
-                
                 <span className="font-bold opacity-60 text-sm whitespace-nowrap ml-1">ml</span>
                 <Edit3 size={16} className="opacity-40 shrink-0 ml-1" />
               </div>
@@ -192,7 +200,6 @@ export default function Water() {
             </div>
 
             <div className="flex gap-2">
-              {/* DÜZELTME: Okları gizleyen Tailwind CSS sınıfları eklendi */}
               <input 
                 type="number" 
                 value={amount}
@@ -256,7 +263,7 @@ export default function Water() {
                       <p className="font-extrabold text-lg">{record.amount} ml</p>
                     </div>
                     <button 
-                      onClick={() => handleDelete(record.id)}
+                      onClick={() => handleDeleteRequest(record.id)} // DÜZELTME: Doğrudan silmek yerine Modal'ı tetikliyor
                       className="p-3 bg-red-500/10 hover:bg-red-500/20 rounded-xl text-red-600 active:scale-90 transition-all shrink-0"
                     >
                       <Trash2 size={18} />
