@@ -5,6 +5,7 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGri
 import { useTranslation } from 'react-i18next';
 // YENİ: Bildirim sistemimizi içe aktarıyoruz
 import { ToastContext } from '../context/ToastContext';
+import { fetchWithAuth } from '../utils/api';
 
 type SleepLog = {
   id?: number;
@@ -30,7 +31,7 @@ export default function Sleep() {
   const { showToast } = useContext(ToastContext);
 
   useEffect(() => {
-    fetch('http://localhost:8080/api/sleep/all')
+    fetchWithAuth('http://localhost:8080/api/sleep/all')
       .then(res => res.json())
       .then(data => {
         if(data && data.length > 0) {
@@ -56,7 +57,7 @@ export default function Sleep() {
       hours: parseFloat(hours)
     };
 
-    fetch('http://localhost:8080/api/sleep/add', {
+    fetchWithAuth('http://localhost:8080/api/sleep/add', {
       method: 'POST',
       headers: { 
         'Content-Type': 'application/json',

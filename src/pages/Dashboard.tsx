@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Dumbbell, Utensils, Droplets, LineChart as LineChartIcon, Settings as SettingsIcon, Moon, ChevronRight, User } from 'lucide-react';
 import { ThemeContext } from '../context/ThemeContext';
 import { useTranslation } from 'react-i18next'; 
+import { fetchWithAuth } from '../utils/api';
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -39,7 +40,7 @@ export default function Dashboard() {
     const savedWaterGoal = localStorage.getItem('dailyWaterGoal');
     const targetAmount = savedWaterGoal ? Number(savedWaterGoal) : 2500;
 
-    fetch('http://localhost:8080/api/nutrition/today')
+    fetchWithAuth('http://localhost:8080/api/nutrition/today')
       .then(res => res.json())
       .then(data => {
         let cal = 0, p = 0, c = 0, f = 0;
@@ -52,7 +53,7 @@ export default function Dashboard() {
         setNutrition({ cal, p: Number(p.toFixed(1)), c: Number(c.toFixed(1)), f: Number(f.toFixed(1)) });
       }).catch(err => console.log("Beslenme verisi çekilemedi", err));
 
-    fetch('http://localhost:8080/api/water/all')
+    fetchWithAuth('http://localhost:8080/api/water/all')
       .then(res => res.json())
       .then(data => {
         if (data && data.length > 0) {
@@ -65,14 +66,14 @@ export default function Dashboard() {
         }
       }).catch(err => console.log("Su verisi çekilemedi", err));
 
-    fetch('http://localhost:8080/api/workout/all')
+    fetchWithAuth('http://localhost:8080/api/workout/all')
       .then(res => res.json())
       .then((data: any[]) => {
         const todayLogs = data.filter(log => log.date && log.date.startsWith(todayString));
         setWorkoutSets(todayLogs.length);
       }).catch(err => console.log("Antrenman verisi çekilemedi", err));
 
-    fetch('http://localhost:8080/api/sleep/all')
+    fetchWithAuth('http://localhost:8080/api/sleep/all')
       .then(res => res.json())
       .then((data: any[]) => {
         const todayLog = data.find(log => log.date && log.date.startsWith(todayString));

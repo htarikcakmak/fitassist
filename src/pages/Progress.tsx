@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { ToastContext } from '../context/ToastContext';
 // 1. ADIM: Özel pencere bileşenimizi (modal) içe aktarıyoruz
 import ConfirmModal from '../components/ConfirmModal';
+import { fetchWithAuth } from '../utils/api';
 
 // Gelen verinin yapısı
 interface ProgressRecord {
@@ -27,12 +28,12 @@ export default function Progress() {
   const [deleteId, setDeleteId] = useState<number | null>(null);
 
   useEffect(() => {
-    fetchProgressData();
+    fetchWithAuthProgressData();
   }, []);
 
-  const fetchProgressData = async () => {
+  const fetchWithAuthProgressData = async () => {
     try {
-      const res = await fetch('http://localhost:8080/api/progress/all');
+      const res = await fetchWithAuth('http://localhost:8080/api/progress/all');
       if (res.ok) {
         const data = await res.json();
         // LİSTE İÇİN: Yeniden -> Eskiye. (Aynı günse son eklenen üstte kalsın)
@@ -55,7 +56,7 @@ export default function Progress() {
     }
 
     try {
-      const res = await fetch('http://localhost:8080/api/progress/add', {
+      const res = await fetchWithAuth('http://localhost:8080/api/progress/add', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ weight: Number(weight), date: date })
@@ -63,7 +64,7 @@ export default function Progress() {
 
       if (res.ok) {
         setWeight(''); 
-        fetchProgressData(); 
+        fetchWithAuthProgressData(); 
         showToast(t('successSaved', 'Başarıyla kaydedildi!'), 'success');
       } else {
         showToast(t('serverError', 'Kayıt işlemi başarısız oldu.'), 'error');
@@ -84,7 +85,7 @@ export default function Progress() {
     if (deleteId === null) return;
 
     try {
-      const res = await fetch(`http://localhost:8080/api/progress/delete/${deleteId}`, {
+      const res = await fetchWithAuth(`http://localhost:8080/api/progress/delete/${deleteId}`, {
         method: 'DELETE'
       });
 

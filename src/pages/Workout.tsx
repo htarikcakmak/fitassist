@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { ToastContext } from '../context/ToastContext';
 // 1. ADIM: Özel pencere bileşenimizi (modal) içe aktarıyoruz
 import ConfirmModal from '../components/ConfirmModal';
+import { fetchWithAuth } from '../utils/api';
 
 interface WorkoutRecord {
   id: number;
@@ -35,19 +36,19 @@ export default function Workout() {
   const [deleteId, setDeleteId] = useState<number | null>(null);
 
   useEffect(() => {
-    fetchWorkouts();
+    fetchWithAuthWorkouts();
   }, []);
 
-  const fetchWorkouts = async () => {
+  const fetchWithAuthWorkouts = async () => {
     try {
-      const res = await fetch('http://localhost:8080/api/workout/all');
+      const res = await fetchWithAuth('http://localhost:8080/api/workout/all');
       if (res.ok) {
         const data = await res.json();
         const sortedData = data.sort((a: WorkoutRecord, b: WorkoutRecord) => b.id - a.id);
         setWorkouts(sortedData);
       }
     } catch (err) {
-      console.error("Fetch error:", err);
+      console.error("fetchWithAuth error:", err);
     }
   };
 
@@ -67,7 +68,7 @@ export default function Workout() {
     };
 
     try {
-      const res = await fetch('http://localhost:8080/api/workout/add', {
+      const res = await fetchWithAuth('http://localhost:8080/api/workout/add', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
@@ -78,11 +79,11 @@ export default function Workout() {
         setWeight('');
         setSets('');
         setReps('');
-        fetchWorkouts();
+        fetchWithAuthWorkouts();
         setActiveTab('today');
         showToast(t('successSaved', 'Başarıyla kaydedildi!'), 'success');
       } else {
-        fetchWorkouts();
+        fetchWithAuthWorkouts();
         showToast(t('alertServerError', 'Kayıt sırasında bir uyarı oluştu.'), 'info');
       }
     } catch (err) {

@@ -1,11 +1,11 @@
-import { useState, useContext } from 'react';
+import { useState, useContext, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, NavLink, Outlet, useLocation } from 'react-router-dom';
 import { Home, Dumbbell, Utensils, Droplets, LineChart as LineChartIcon, Settings as SettingsIcon, Moon, Globe, ChevronDown, User } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import Profile from './pages/Profile'; 
 import { ToastProvider } from './context/ToastContext';
-
 import { ThemeContext } from './context/ThemeContext';
+
 import Sleep from './pages/Sleep';
 import Dashboard from './pages/Dashboard';
 import Workout from './pages/Workout';
@@ -13,6 +13,9 @@ import Progress from './pages/Progress';
 import Nutrition from './pages/Nutrition';
 import WaterTracker from './pages/WaterTracker';
 import Settings from './pages/Settings';
+
+// Güvenlik kalkanı bileşenimizi içe aktarıyoruz
+import ProtectedRoute from './components/ProtectedRoute';
 
 const GlobalStyles = () => {
   const { themeBg, themePrimary } = useContext(ThemeContext);
@@ -157,10 +160,8 @@ function Layout() {
                 <NavLink 
                   key={item.path} 
                   to={item.path} 
-                  /* DÜZELTME: shrink-0 eklendi, padding değerleri p-1.5 olarak rahatlatıldı */
                   className={`relative flex items-center justify-center shrink-0 rounded-2xl transition-all duration-500 ease-out overflow-hidden mx-0.5 ${isActive ? 'bg-white shadow-sm border border-white/80 p-2 px-3' : 'p-2 opacity-60 hover:opacity-100 active:scale-90'}`}
                 >
-                  {/* DÜZELTME: İkonun küçülmesini engellemek için shrink-0 eklendi */}
                   <Icon size={22} strokeWidth={isActive ? 2.5 : 2} color={themePrimary} className={`shrink-0 transition-transform duration-500 ${isActive ? 'scale-110' : ''}`} />
                   
                   {/* Animasyonlu Metin Genişleme Efekti */}
@@ -180,27 +181,54 @@ function Layout() {
 export default function App() {
   const [themeBg, setThemeBg] = useState('#d8c97f');
   const [themePrimary, setThemePrimary] = useState('#6a9433');
+  
+  // Dil değişimi için aracı çağırıyoruz
+  const { i18n } = useTranslation();
 
   const updateTheme = (bg: string, primary: string) => {
     setThemeBg(bg);
     setThemePrimary(primary);
   };
 
+  // Uygulama açıldığında ayarları hafızadan çekip uygulayan mantık
+  useEffect(() => {
+    const storedUser = localStorage.getItem('fitassist_user') || sessionStorage.getItem('fitassist_user');
+    
+    if (storedUser) {
+      const user = JSON.parse(storedUser);
+      
+      // Kullanıcının kayıtlı teması varsa sistemi güncelle
+      if (user.themeBg && user.themePrimary) {
+        updateTheme(user.themeBg, user.themePrimary);
+      }
+      
+      // Kullanıcının kayıtlı dili varsa çeviri sistemini güncelle
+      if (user.language) {
+        i18n.changeLanguage(user.language);
+      }
+    }
+  }, [i18n]);
+
   return (
     <ThemeContext.Provider value={{ themeBg, themePrimary, setTheme: updateTheme }}>
      <ToastProvider>
       <BrowserRouter>
         <Routes>
-         <Route path="/" element={<Layout />}>
-         <Route index element={<Dashboard />} />
-         <Route path="workout" element={<Workout />} />
-         <Route path="sleep" element={<Sleep />} />
-         <Route path="nutrition" element={<Nutrition />} />
-         <Route path="water" element={<WaterTracker />} />
-         <Route path="progress" element={<Progress />} />
-         <Route path="profile" element={<Profile />} />
-         <Route path="settings" element={<Settings />} />
-         </Route>
+          <Route path="/" element={<Layout />}>
+            
+            {/* HERKESE AÇIK OLAN TEK ROTA (Giriş/Kayıt olma sayfası olduğu için korunmuyor) */}
+            <Route path="profile" element={<Profile />} />
+
+            {/* GÜVENLİK KALKANI EKLENEN ROTALAR */}
+            <Route index element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+            <Route path="workout" element={<ProtectedRoute><Workout /></ProtectedRoute>} />
+            <Route path="sleep" element={<ProtectedRoute><Sleep /></ProtectedRoute>} />
+            <Route path="nutrition" element={<ProtectedRoute><Nutrition /></ProtectedRoute>} />
+            <Route path="water" element={<ProtectedRoute><WaterTracker /></ProtectedRoute>} />
+            <Route path="progress" element={<ProtectedRoute><Progress /></ProtectedRoute>} />
+            <Route path="settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+            
+          </Route>
         </Routes>
       </BrowserRouter>
      </ToastProvider>

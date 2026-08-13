@@ -3,6 +3,7 @@ import { User, Mail, Lock, Camera, LogOut, ArrowRight, Ruler, Weight, Target, Sa
 import { ThemeContext } from '../context/ThemeContext';
 import { useTranslation } from 'react-i18next';
 import { ToastContext } from '../context/ToastContext';
+import { fetchWithAuth } from '../utils/api';
 
 export default function Profile() {
   const { themePrimary } = useContext(ThemeContext);
@@ -67,7 +68,7 @@ export default function Profile() {
       : { email: tempEmail, password: tempPassword };
 
     try {
-      const response = await fetch(url, {
+      const response = await fetchWithAuth(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
@@ -98,7 +99,7 @@ export default function Profile() {
       showToast(t('loginSuccess', 'Başarıyla giriş yapıldı!'), 'success');
 
     } catch (error) {
-      console.error("Fetch error:", error);
+      console.error("fetchWithAuth error:", error);
       showToast(t('serverError', 'Sunucuya bağlanılamadı!'), 'error');
     }
   };
@@ -125,7 +126,7 @@ export default function Profile() {
     };
 
     try {
-      const response = await fetch(`http://localhost:8080/api/users/update/${userId}`, {
+      const response = await fetchWithAuth(`http://localhost:8080/api/users/update/${userId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updatedUser)

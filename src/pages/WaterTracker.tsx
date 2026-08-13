@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { ToastContext } from '../context/ToastContext';
 // YENİ: Yaptığımız şık pencereyi içe aktarıyoruz
 import ConfirmModal from '../components/ConfirmModal';
+import { fetchWithAuth } from '../utils/api';
 
 interface WaterRecord {
   id: number;
@@ -29,19 +30,19 @@ export default function Water() {
   });
 
   useEffect(() => {
-    fetchWaterData();
+    fetchWithAuthWaterData();
   }, []);
 
-  const fetchWaterData = async () => {
+  const fetchWithAuthWaterData = async () => {
     try {
-      const res = await fetch('http://localhost:8080/api/water/all');
+      const res = await fetchWithAuth('http://localhost:8080/api/water/all');
       if (res.ok) {
         const data = await res.json();
         const sortedData = data.sort((a: WaterRecord, b: WaterRecord) => b.id - a.id);
         setWaterData(sortedData);
       }
     } catch (err) {
-      console.error("Fetch error:", err);
+      console.error("fetchWithAuth error:", err);
     }
   };
 
@@ -53,14 +54,14 @@ export default function Water() {
     }
     const today = new Date().toISOString().split('T')[0];
     try {
-      const res = await fetch('http://localhost:8080/api/water/add', {
+      const res = await fetchWithAuth('http://localhost:8080/api/water/add', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ amount: valueToAdd, date: today })
       });
       if (res.ok) {
         setAmount(''); 
-        fetchWaterData(); 
+        fetchWithAuthWaterData(); 
         showToast(t('successSaved', 'Başarıyla eklendi!'), 'success');
       } else {
         showToast(t('serverError', 'Kayıt işlemi başarısız oldu.'), 'error');
@@ -80,7 +81,7 @@ export default function Water() {
     if (deleteId === null) return;
 
     try {
-      const res = await fetch(`http://localhost:8080/api/water/delete/${deleteId}`, {
+      const res = await fetchWithAuth(`http://localhost:8080/api/water/delete/${deleteId}`, {
         method: 'DELETE'
       });
 
