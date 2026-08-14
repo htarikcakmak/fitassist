@@ -4,6 +4,7 @@ import { ThemeContext } from '../context/ThemeContext';
 import { useTranslation } from 'react-i18next';
 import { ToastContext } from '../context/ToastContext';
 import { fetchWithAuth } from '../utils/api';
+import { NavLink } from 'react-router-dom';
 
 export default function Profile() {
   const { themePrimary } = useContext(ThemeContext);
@@ -139,12 +140,17 @@ export default function Profile() {
 
       const savedData = await response.json();
 
-      // Güncellenen veriyi mevcut hafızaya (kalıcı veya oturum) üzerine yazıyoruz
-      if (localStorage.getItem('fitassist_user')) {
-        localStorage.setItem('fitassist_user', JSON.stringify(savedData));
-      } else {
-        sessionStorage.setItem('fitassist_user', JSON.stringify(savedData));
-      }
+      // YENİ VE DÜZELTİLMİŞ KISIM: Eski token'ı kaybetmeden verileri birleştiriyoruz
+      const storage = localStorage.getItem('fitassist_user') ? localStorage : sessionStorage;
+      const currentUserData = JSON.parse(storage.getItem('fitassist_user') || '{}');
+      
+      const newStorageData = {
+        ...currentUserData, // Eski verileri (özellikle token'ı) koruyoruz
+        ...savedData        // Yeni gelen verilerle (boy, kilo vb.) güncelliyoruz
+      };
+
+      // Güncellenmiş ve anahtarı korunan veriyi hafızaya tekrar yazıyoruz
+      storage.setItem('fitassist_user', JSON.stringify(newStorageData));
 
       setIsEditing(false);
       showToast(t('successSaved', 'Başarıyla kaydedildi!'), 'success');
@@ -226,6 +232,7 @@ export default function Profile() {
               />
             </div>
 
+            {/* BENİ HATIRLA VE ŞİFREMİ UNUTTUM ALANI */}
             {authMode === 'login' && (
               <div className="flex items-center justify-between mt-2 px-1">
                 <label className="flex items-center gap-2 cursor-pointer group">
@@ -244,6 +251,15 @@ export default function Profile() {
                     {t('rememberMe', 'Beni Hatırla')}
                   </span>
                 </label>
+
+                {/* YENİ EKLENEN ŞİFREMİ UNUTTUM BAĞLANTISI */}
+                <NavLink 
+                  to="/forgot-password" 
+                  className="text-sm font-extrabold opacity-70 hover:opacity-100 transition-opacity"
+                  style={{ color: themePrimary }}
+                >
+                  {t('forgotPassword', 'Şifremi Unuttum')}
+                </NavLink>
               </div>
             )}
 

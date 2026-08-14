@@ -13,9 +13,12 @@ import Progress from './pages/Progress';
 import Nutrition from './pages/Nutrition';
 import WaterTracker from './pages/WaterTracker';
 import Settings from './pages/Settings';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
 
-// Güvenlik kalkanı bileşenimizi içe aktarıyoruz
+// Güvenlik kalkanı ve API aracımızı içe aktarıyoruz
 import ProtectedRoute from './components/ProtectedRoute';
+import { fetchWithAuth } from './utils/api';
 
 const GlobalStyles = () => {
   const { themeBg, themePrimary } = useContext(ThemeContext);
@@ -75,6 +78,39 @@ function Layout() {
     { path: '/settings', icon: SettingsIcon, label: t('Ayarlar') },
   ];
 
+  // YENİ: Dili değiştiren ve veritabanına anında kaydeden fonksiyon
+  const handleLanguageChange = async (code: string) => {
+    // 1. Arayüz dilini anında değiştir ve menüyü kapat
+    i18n.changeLanguage(code);
+    setIsLangMenuOpen(false);
+
+    // 2. Kullanıcı verisini yerel hafızadan bul
+    const storage = localStorage.getItem('fitassist_user') ? localStorage : sessionStorage;
+    const storedUser = storage.getItem('fitassist_user');
+    
+    if (storedUser) {
+      const user = JSON.parse(storedUser);
+      
+      // 3. Yerel hafızadaki dil ayarını güncelle
+      user.language = code;
+      storage.setItem('fitassist_user', JSON.stringify(user));
+
+      // 4. Arka plana (Veritabanına) yeni dili kaydetmek için istek at
+      try {
+        await fetchWithAuth(`http://localhost:8080/api/users/update/${user.id}`, {
+          method: 'PUT',
+          body: JSON.stringify({
+            language: code,
+            themeBg: user.themeBg,
+            themePrimary: user.themePrimary
+          })
+        });
+      } catch (error) {
+        console.error("Dil değişikliği veritabanına kaydedilemedi:", error);
+      }
+    }
+  };
+
   return (
     <div className="fixed inset-0 flex font-sans" style={{ backgroundColor: themeBg }}>
       <GlobalStyles />
@@ -87,7 +123,8 @@ function Layout() {
         >
           <Globe size={18} color={themePrimary} />
           <span className="font-extrabold text-sm uppercase" style={{ color: themePrimary }}>
-            {i18n.language}
+            {/* Uzun dil kodlarını (tr-TR) sadece 2 harfe (tr) kısaltarak gösteriyoruz */}
+            {i18n.language ? i18n.language.substring(0, 2) : 'TR'}
           </span>
           <ChevronDown 
             size={16} 
@@ -98,20 +135,21 @@ function Layout() {
 
         {isLangMenuOpen && (
           <div className="absolute top-full right-0 mt-3 w-40 bg-white/80 backdrop-blur-2xl rounded-2xl shadow-xl border border-white/50 overflow-hidden flex flex-col animate-in slide-in-from-top-2 fade-in duration-200">
-            {languages.map((lang) => (
-              <button
-                key={lang.code}
-                onClick={() => {
-                  i18n.changeLanguage(lang.code);
-                  setIsLangMenuOpen(false);
-                }}
-                className={`px-4 py-3 text-left font-bold text-sm transition-colors hover:bg-black/5 ${
-                  i18n.language === lang.code ? 'text-black bg-white shadow-inner' : 'text-gray-600'
-                }`}
-              >
-                {lang.label}
-              </button>
-            ))}
+            {languages.map((lang) => {
+              // Dil kodunun doğru eşleştiğinden emin olmak için startsWith kullanıyoruz
+              const isSelected = i18n.language && i18n.language.startsWith(lang.code);
+              return (
+                <button
+                  key={lang.code}
+                  onClick={() => handleLanguageChange(lang.code)}
+                  className={`px-4 py-3 text-left font-bold text-sm transition-colors hover:bg-black/5 ${
+                    isSelected ? 'text-black bg-white shadow-inner' : 'text-gray-600'
+                  }`}
+                >
+                  {lang.label}
+                </button>
+              );
+            })}
           </div>
         )}
       </div>
@@ -216,8 +254,10 @@ export default function App() {
         <Routes>
           <Route path="/" element={<Layout />}>
             
-            {/* HERKESE AÇIK OLAN TEK ROTA (Giriş/Kayıt olma sayfası olduğu için korunmuyor) */}
+            {/* HERKESE AÇIK OLAN ROTALAR */}
             <Route path="profile" element={<Profile />} />
+            <Route path="forgot-password" element={<ForgotPassword />} />
+            <Route path="reset-password" element={<ResetPassword />} />
 
             {/* GÜVENLİK KALKANI EKLENEN ROTALAR */}
             <Route index element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
