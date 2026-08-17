@@ -1,35 +1,27 @@
-// src/utils/api.ts
 
-/**
- * Bu fonksiyon, standart fetch işlemini sarmalayarak (wrap) 
- * her isteğin başlığına otomatik olarak JWT Token'ı ekler.
- */
-export const fetchWithAuth = async (url: string, options: RequestInit = {}) => {
-  // 1. Kullanıcı bilgisini kalıcı veya oturum hafızasından alıyoruz
-  const storedUser = localStorage.getItem('fitassist_user') || sessionStorage.getItem('fitassist_user');
+const API_BASE_URL = 'http://123.123.1.23:8080';
+
+// Uygulama genelinde kullanılacak güvenli veri çekme aracı
+export const fetchWithAuth = async (endpoint: string, options: RequestInit = {}) => {
+  const userStr = localStorage.getItem('fitassist_user') || sessionStorage.getItem('fitassist_user');
   let token = '';
-
-  // 2. Eğer kullanıcı giriş yapmışsa, içinden token'ı çekiyoruz
-  if (storedUser) {
-    const user = JSON.parse(storedUser);
-    token = user.token; // UserController'da ürettiğimiz "token"
+  
+  if (userStr) {
+    const user = JSON.parse(userStr);
+    token = user.token || ''; 
   }
 
-  // 3. İstek başlıklarını (headers) hazırlıyoruz
-  const headers: HeadersInit = {
-    // Varsayılan olarak JSON formatında veri gönderdiğimizi belirtiyoruz
-    'Content-Type': 'application/json',
-    
-    // Eğer önceden gönderilmiş özel başlıklar varsa onları koruyoruz (örn: Accept-Language)
+  const headers = {
     ...options.headers,
-    
-    // Eğer Token varsa, Güvenlik Filtremizin beklediği "Bearer" formatında ekliyoruz
-    ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+    'Authorization': `Bearer ${token}`
   };
 
-  // 4. İsteği güncellenmiş başlıklar ile gerçekleştiriyoruz
-  return fetch(url, {
+  // API_BASE_URL ile gelen uç noktayı (endpoint) birleştiriyoruz
+  // Örnek: http://123.123.1.23:8080 + /api/users/login
+  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
     ...options,
     headers
   });
+
+  return response;
 };

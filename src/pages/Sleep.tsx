@@ -23,7 +23,7 @@ export default function Sleep() {
   
   const [showDatePicker, setShowDatePicker] = useState(false);
   
-  const { themeBg, themePrimary } = useContext(ThemeContext);
+  const { themePrimary } = useContext(ThemeContext);
   
   const { t, i18n } = useTranslation();
   
@@ -42,7 +42,7 @@ export default function Sleep() {
           setLogs(cleanedData);
         }
       })
-      .catch(err => console.log("Arka plan kapalı, yerel veriler kullanılıyor."));
+      .catch(() => console.log("Arka plan kapalı, yerel veriler kullanılıyor."));
   }, []);
 
   const handleSaveSleep = () => {
@@ -72,7 +72,7 @@ export default function Sleep() {
       }
       return responsePayload;
     })
-    .then(responsePayload => {
+    .then(() => {
       // DÜZELTME: Çirkin alert yerine çoklu dil destekli şık başarı bildirimi (Toast)
       showToast(t('successSaved', 'Başarıyla kaydedildi!'), 'success');
 

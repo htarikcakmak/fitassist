@@ -114,7 +114,7 @@ export default function Nutrition() {
       if (!res.ok) throw new Error(responsePayload.message || 'Sunucu hatası');
       return { payload: responsePayload, addedFoodId: responsePayload.data?.id };
     })
-    .then(({ payload, addedFoodId }) => {
+    .then(({ addedFoodId }) => {
       const foodWithRealId = { ...calculatedFood, id: addedFoodId?.toString() || calculatedFood.id };
       setMeals(prev => ({ ...prev, [modalData.mealType]: [...prev[modalData.mealType], foodWithRealId] }));
       closeModal();

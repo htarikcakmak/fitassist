@@ -7,7 +7,7 @@ import { fetchWithAuth } from '../utils/api';
 
 export default function Dashboard() {
   const navigate = useNavigate();
-  const { themePrimary, themeBg } = useContext(ThemeContext);
+  const { themePrimary } = useContext(ThemeContext);
   const { t, i18n } = useTranslation();
 
   const [profileData, setProfileData] = useState<{name: string, age: number, height: number, weight: number, imageUrl: string} | null>(null);

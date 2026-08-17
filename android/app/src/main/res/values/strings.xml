@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">FitAssist</string>
+    <string name="title_activity_main">FitAssist</string>
+    <string name="package_name">com.fitassist.app</string>
+    <string name="custom_url_scheme">com.fitassist.app</string>
+</resources>
