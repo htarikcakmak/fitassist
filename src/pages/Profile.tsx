@@ -63,7 +63,7 @@ export default function Profile() {
     }
 
     const endpoint = authMode === 'register' ? '/register' : '/login';
-    const url = `http://localhost:8080/api/users${endpoint}`;
+    const url = `https://fitassist-backend.onrender.com/api/users${endpoint}`;
     const payload = authMode === 'register' 
       ? { name: tempName, email: tempEmail, password: tempPassword } 
       : { email: tempEmail, password: tempPassword };
@@ -127,7 +127,7 @@ export default function Profile() {
     };
 
     try {
-      const response = await fetchWithAuth(`http://localhost:8080/api/users/update/${userId}`, {
+      const response = await fetchWithAuth(`https://fitassist-backend.onrender.com/api/users/update/${userId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updatedUser)

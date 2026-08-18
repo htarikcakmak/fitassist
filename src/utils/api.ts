@@ -15,9 +15,14 @@ export const fetchWithAuth = async (endpoint: string, options: RequestInit = {})
     'Authorization': `Bearer ${token}`
   };
 
-  // API_BASE_URL ile gelen uç noktayı (endpoint) birleştiriyoruz
-  // Örnek: http://123.123.1.23:8080 + /api/users/login
-  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+  // YENİ EKLENEN KONTROL MEKANİZMASI:
+  // Gelen endpoint 'http' ile başlıyorsa zaten tam bir linktir, olduğu gibi kullan.
+  // Başlamıyorsa (örneğin sadece '/api/users/register' ise) API_BASE_URL ile birleştir.
+  const isFullUrl = endpoint.startsWith('http');
+  const finalUrl = isFullUrl ? endpoint : `${API_BASE_URL}${endpoint}`;
+
+  // İsteği artık hatalı birleşen URL ile değil, akıllı 'finalUrl' ile atıyoruz
+  const response = await fetch(finalUrl, {
     ...options,
     headers
   });

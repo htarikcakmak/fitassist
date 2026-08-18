@@ -13,7 +13,7 @@ export default function ForgotPassword() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const response = await fetch('http://localhost:8080/api/users/forgot-password', {
+      const response = await fetch('https://fitassist-backend.onrender.com/api/users/forgot-password', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email })

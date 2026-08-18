@@ -33,7 +33,7 @@ export default function Progress() {
 
   const fetchWithAuthProgressData = async () => {
     try {
-      const res = await fetchWithAuth('http://localhost:8080/api/progress/all');
+      const res = await fetchWithAuth('https://fitassist-backend.onrender.com/api/progress/all');
       if (res.ok) {
         const data = await res.json();
         // LİSTE İÇİN: Yeniden -> Eskiye. (Aynı günse son eklenen üstte kalsın)
@@ -56,7 +56,7 @@ export default function Progress() {
     }
 
     try {
-      const res = await fetchWithAuth('http://localhost:8080/api/progress/add', {
+      const res = await fetchWithAuth('https://fitassist-backend.onrender.com/api/progress/add', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ weight: Number(weight), date: date })
@@ -85,7 +85,7 @@ export default function Progress() {
     if (deleteId === null) return;
 
     try {
-      const res = await fetchWithAuth(`http://localhost:8080/api/progress/delete/${deleteId}`, {
+      const res = await fetchWithAuth(`https://fitassist-backend.onrender.com/api/progress/delete/${deleteId}`, {
         method: 'DELETE'
       });
 

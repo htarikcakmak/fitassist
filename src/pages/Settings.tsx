@@ -56,7 +56,7 @@ export default function Settings() {
     };
 
     try {
-      const res = await fetchWithAuth(`http://localhost:8080/api/users/update/${userId}`, {
+      const res = await fetchWithAuth(`https://fitassist-backend.onrender.com/api/users/update/${userId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json'

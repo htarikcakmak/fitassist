@@ -47,7 +47,7 @@ export default function Nutrition() {
 
   // 1. VERİLERİ ÇEKME (READ)
   useEffect(() => {
-    fetchWithAuth('http://localhost:8080/api/nutrition/today')
+    fetchWithAuth('https://fitassist-backend.onrender.com/api/nutrition/today')
       .then(res => res.json())
       .then(data => {
         const loadedMeals: MealsState = { 'Kahvaltı': [], 'Öğle': [], 'Akşam': [] };
@@ -104,7 +104,7 @@ export default function Nutrition() {
       fats: calculatedFood.f
     };
 
-    fetchWithAuth('http://localhost:8080/api/nutrition/add', {
+    fetchWithAuth('https://fitassist-backend.onrender.com/api/nutrition/add', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Accept-Language': i18n.language || 'tr' },
       body: JSON.stringify(payload)
@@ -133,7 +133,7 @@ export default function Nutrition() {
     if (!window.confirm("Bu besini silmek istediğinize emin misiniz?")) return;
 
     try {
-      const res = await fetchWithAuth(`http://localhost:8080/api/nutrition/delete/${foodId}`, {
+      const res = await fetchWithAuth(`https://fitassist-backend.onrender.com/api/nutrition/delete/${foodId}`, {
         method: 'DELETE'
       });
 

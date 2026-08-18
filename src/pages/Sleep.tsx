@@ -31,7 +31,7 @@ export default function Sleep() {
   const { showToast } = useContext(ToastContext);
 
   useEffect(() => {
-    fetchWithAuth('http://localhost:8080/api/sleep/all')
+    fetchWithAuth('https://fitassist-backend.onrender.com/api/sleep/all')
       .then(res => res.json())
       .then(data => {
         if(data && data.length > 0) {
@@ -57,7 +57,7 @@ export default function Sleep() {
       hours: parseFloat(hours)
     };
 
-    fetchWithAuth('http://localhost:8080/api/sleep/add', {
+    fetchWithAuth('https://fitassist-backend.onrender.com/api/sleep/add', {
       method: 'POST',
       headers: { 
         'Content-Type': 'application/json',

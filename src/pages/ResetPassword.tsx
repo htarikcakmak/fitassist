@@ -1,12 +1,11 @@
 import { useState, useContext } from 'react';
-import { useTranslation } from 'react-i18next';
 import { ToastContext } from '../context/ToastContext';
 import { ThemeContext } from '../context/ThemeContext';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 
 export default function ResetPassword() {
   const [newPassword, setNewPassword] = useState('');
-  const { t } = useTranslation();
+  // const { t } = useTranslation();
   const { showToast } = useContext(ToastContext);
   const { themePrimary } = useContext(ThemeContext);
   
@@ -24,11 +23,11 @@ export default function ResetPassword() {
     }
 
     try {
-      const response = await fetch('http://localhost:8080/api/users/reset-password', {
+    const response = await fetch('https://fitassist-backend.onrender.com/api/users/reset-password', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token, newPassword })
-      });
+        body: JSON.stringify({ token, password: newPassword })
+    });
 
       const data = await response.json();
       if (response.ok) {
@@ -38,8 +37,12 @@ export default function ResetPassword() {
         showToast(data.message, 'error');
       }
     } catch (error) {
-      showToast(t('serverError', 'Sunucu hatası!'), 'error');
+
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      alert("GERÇEK HATA: " + errorMessage + " \nDetay: " + JSON.stringify(error));
     }
+
+    console.log("sunucuya bağlanamadı");
   };
 
   return (

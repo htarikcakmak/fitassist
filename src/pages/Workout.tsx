@@ -41,7 +41,7 @@ export default function Workout() {
 
   const fetchWithAuthWorkouts = async () => {
     try {
-      const res = await fetchWithAuth('http://localhost:8080/api/workout/all');
+      const res = await fetchWithAuth('https://fitassist-backend.onrender.com/api/workout/all');
       if (res.ok) {
         const data = await res.json();
         const sortedData = data.sort((a: WorkoutRecord, b: WorkoutRecord) => b.id - a.id);
@@ -68,7 +68,7 @@ export default function Workout() {
     };
 
     try {
-      const res = await fetchWithAuth('http://localhost:8080/api/workout/add', {
+      const res = await fetchWithAuth('https://fitassist-backend.onrender.com/api/workout/add', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
@@ -102,7 +102,7 @@ export default function Workout() {
     if (deleteId === null) return;
 
     try {
-      const res = await fetch(`http://localhost:8080/api/workout/delete/${deleteId}`, {
+      const res = await fetch(`https://fitassist-backend.onrender.com/api/workout/delete/${deleteId}`, {
         method: 'DELETE'
       });
 

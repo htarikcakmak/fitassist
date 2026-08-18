@@ -35,7 +35,7 @@ export default function Water() {
 
   const fetchWithAuthWaterData = async () => {
     try {
-      const res = await fetchWithAuth('http://localhost:8080/api/water/all');
+      const res = await fetchWithAuth('https://fitassist-backend.onrender.com/api/water/all');
       if (res.ok) {
         const data = await res.json();
         const sortedData = data.sort((a: WaterRecord, b: WaterRecord) => b.id - a.id);
@@ -54,7 +54,7 @@ export default function Water() {
     }
     const today = new Date().toISOString().split('T')[0];
     try {
-      const res = await fetchWithAuth('http://localhost:8080/api/water/add', {
+      const res = await fetchWithAuth('https://fitassist-backend.onrender.com/api/water/add', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ amount: valueToAdd, date: today })
@@ -81,7 +81,7 @@ export default function Water() {
     if (deleteId === null) return;
 
     try {
-      const res = await fetchWithAuth(`http://localhost:8080/api/water/delete/${deleteId}`, {
+      const res = await fetchWithAuth(`https://fitassist-backend.onrender.com/api/water/delete/${deleteId}`, {
         method: 'DELETE'
       });
 

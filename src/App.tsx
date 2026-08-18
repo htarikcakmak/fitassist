@@ -97,7 +97,7 @@ function Layout() {
 
       // 4. Arka plana (Veritabanına) yeni dili kaydetmek için istek at
       try {
-        await fetchWithAuth(`http://localhost:8080/api/users/update/${user.id}`, {
+        await fetchWithAuth(`https://fitassist-backend.onrender.com/api/users/update/${user.id}`, {
           method: 'PUT',
           body: JSON.stringify({
             language: code,
