@@ -1,5 +1,4 @@
-
-const API_BASE_URL = 'http://123.123.1.23:8080';
+const API_BASE_URL = 'https://fitassist-backend.onrender.com';
 
 // Uygulama genelinde kullanılacak güvenli veri çekme aracı
 export const fetchWithAuth = async (endpoint: string, options: RequestInit = {}) => {
