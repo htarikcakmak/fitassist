@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import Profile from './pages/Profile'; 
 import { ToastProvider } from './context/ToastContext';
 import { ThemeContext } from './context/ThemeContext';
+import { SplashScreen } from '@capacitor/splash-screen';
 
 import Sleep from './pages/Sleep';
 import Dashboard from './pages/Dashboard';
@@ -219,6 +220,10 @@ function Layout() {
 export default function App() {
   const [themeBg, setThemeBg] = useState('#d8c97f');
   const [themePrimary, setThemePrimary] = useState('#6a9433');
+
+  useEffect(() => {
+    SplashScreen.hide();
+  }, []);
   
   // Dil değişimi için aracı çağırıyoruz
   const { i18n } = useTranslation();

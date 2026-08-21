@@ -5,18 +5,22 @@ import { useTranslation } from 'react-i18next';
 import { ToastContext } from '../context/ToastContext';
 import { fetchWithAuth } from '../utils/api';
 import { NavLink } from 'react-router-dom';
+import { Loader } from '../components/Loader';
 
 export default function Profile() {
   const { themePrimary } = useContext(ThemeContext);
   const { t } = useTranslation();
   const { showToast } = useContext(ToastContext);
+  
+  const [isLoading, setIsLoading] = useState(false);
+  // Yükleme ekranında görünecek dinamik mesajı tuttuğumuz değişken (YENİ)
+  const [loadingMessage, setLoadingMessage] = useState('');
 
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'register' | 'forgotPassword'>('login');
   const [isEditing, setIsEditing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Beni Hatırla state'i
   const [rememberMe, setRememberMe] = useState(false);
 
   const [userId, setUserId] = useState<number | null>(null);
@@ -33,7 +37,6 @@ export default function Profile() {
   const [tempPassword, setTempPassword] = useState('');
 
   useEffect(() => {
-    // Hem kalıcı hafızayı hem de oturum hafızasını kontrol ediyoruz
     const storedUser = localStorage.getItem('fitassist_user') || sessionStorage.getItem('fitassist_user');
     
     if (storedUser) {
@@ -61,6 +64,10 @@ export default function Profile() {
       showToast(t('fillAllFields', 'Lütfen tüm alanları doldurun!'), 'error');
       return;
     }
+
+    // GİRİŞ YAPILIRKEN GÖRÜNECEK MESAJI BELİRLİYORUZ
+    setLoadingMessage('Sunucu uyandırılıyor, giriş yapılıyor...');
+    setIsLoading(true);
 
     const endpoint = authMode === 'register' ? '/register' : '/login';
     const url = `https://fitassist-backend.onrender.com/api/users${endpoint}`;
@@ -92,7 +99,6 @@ export default function Profile() {
 
       setIsLoggedIn(true);
 
-      // Beni hatırla seçeneğine göre veriyi ilgili hafızaya kaydediyoruz
       const storage = rememberMe ? localStorage : sessionStorage;
       storage.setItem('fitassist_user', JSON.stringify(userData));
       
@@ -102,6 +108,8 @@ export default function Profile() {
     } catch (error) {
       console.error("fetchWithAuth error:", error);
       showToast(t('serverError', 'Sunucuya bağlanılamadı!'), 'error');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -109,12 +117,15 @@ export default function Profile() {
     setIsLoggedIn(false);
     setAuthMode('login');
     setIsEditing(false);
-    // Çıkış yaparken her iki hafızayı da temizliyoruz
     localStorage.removeItem('fitassist_user');
     sessionStorage.removeItem('fitassist_user');
   };
 
   const handleSaveProfile = async () => {
+    // PROFİL GÜNCELLENİRKEN GÖRÜNECEK MESAJI BELİRLİYORUZ
+    setLoadingMessage('Profil bilgileri kaydediliyor...');
+    setIsLoading(true);
+    
     const updatedUser = { 
       id: userId, 
       name: name, 
@@ -140,16 +151,14 @@ export default function Profile() {
 
       const savedData = await response.json();
 
-      // YENİ VE DÜZELTİLMİŞ KISIM: Eski token'ı kaybetmeden verileri birleştiriyoruz
       const storage = localStorage.getItem('fitassist_user') ? localStorage : sessionStorage;
       const currentUserData = JSON.parse(storage.getItem('fitassist_user') || '{}');
       
       const newStorageData = {
-        ...currentUserData, // Eski verileri (özellikle token'ı) koruyoruz
-        ...savedData        // Yeni gelen verilerle (boy, kilo vb.) güncelliyoruz
+        ...currentUserData,
+        ...savedData
       };
 
-      // Güncellenmiş ve anahtarı korunan veriyi hafızaya tekrar yazıyoruz
       storage.setItem('fitassist_user', JSON.stringify(newStorageData));
 
       setIsEditing(false);
@@ -158,6 +167,8 @@ export default function Profile() {
     } catch (err) {
       console.error("Arka plan güncelleme hatası:", err);
       showToast("Sunucu ile bağlantı koptu!", "error");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -166,16 +177,19 @@ export default function Profile() {
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      // Fotoğrafı geçici URL yerine Base64 formatına çevirerek kaydediyoruz
       const reader = new FileReader();
       reader.onloadend = () => {
-        // Okuma işlemi bittiğinde elde edilen veri (Base64 String)
         const base64String = reader.result as string;
         setProfilePic(base64String);
       };
       reader.readAsDataURL(file);
     }
   };
+
+  // Yükleme sırasında belirlenen mesajı Loader'a gönderiyoruz
+  if (isLoading) {
+    return <Loader message={loadingMessage} />;
+  }
 
   return (
     <div className="px-6 md:p-10 mt-2 md:mt-6 animate-in fade-in duration-500 max-w-lg mx-auto flex flex-col justify-center h-full pb-32">
@@ -232,7 +246,6 @@ export default function Profile() {
               />
             </div>
 
-            {/* BENİ HATIRLA VE ŞİFREMİ UNUTTUM ALANI */}
             {authMode === 'login' && (
               <div className="flex items-center justify-between mt-2 px-1">
                 <label className="flex items-center gap-2 cursor-pointer group">
@@ -252,7 +265,6 @@ export default function Profile() {
                   </span>
                 </label>
 
-                {/* YENİ EKLENEN ŞİFREMİ UNUTTUM BAĞLANTISI */}
                 <NavLink 
                   to="/forgot-password" 
                   className="text-sm font-extrabold opacity-70 hover:opacity-100 transition-opacity"

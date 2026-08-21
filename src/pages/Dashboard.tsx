@@ -23,7 +23,9 @@ export default function Dashboard() {
   });
 
   useEffect(() => {
-    const storedUser = localStorage.getItem('fitassist_user');
+    // BURASI DÜZELTİLDİ: Artık hem kalıcı (local) hem de geçici (session) hafızaya bakıyoruz
+    const storedUser = localStorage.getItem('fitassist_user') || sessionStorage.getItem('fitassist_user');
+    
     if (storedUser) {
       const user = JSON.parse(storedUser);
       setProfileData({
