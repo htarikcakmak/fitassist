@@ -11,6 +11,25 @@
   "sets": "Set",
   "repsShort": "reps",
   "noWorkoutDataLine1": "No sets entered for this program yet.",
-  "noWorkoutDataLine2": "Add your first set now!"
-  
+  "noWorkoutDataLine2": "Add your first set now!",
+  "food_1": "Boiled Egg",
+  "info_1": "1 medium-sized (50g) egg.",
+  "food_2": "Egg White",
+  "info_2": "Zero fat, pure protein source.",
+  "food_3": "Omelette (Low Fat)",
+  "info_3": "Omelette made from 1 egg.",
+  "food_4": "Kefir (Plain)",
+  "info_4": "1 standard glass of kefir.",
+  "food_5": "Probiotic Kefir",
+  "info_5": "Full-fat probiotic kefir.",
+  "food_6": "Curd Cheese (Fat-Free)",
+  "info_6": "High-protein breakfast. 3 tablespoons ~50g.",
+  "food_7": "Strained Yogurt",
+  "info_7": "2 heaped tablespoons.",
+  "food_8": "Yogurt (Half-Fat)",
+  "info_8": "1 small bowl.",
+  "food_9": "Milk (Half-Fat)",
+  "info_9": "1 glass of milk.",
+  "food_10": "Lactose-Free Milk",
+  "info_10": "1 glass of lactose-free milk."
 }

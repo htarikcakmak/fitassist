@@ -22,10 +22,8 @@ export default function Nutrition() {
   const { themeBg, themePrimary } = useContext(ThemeContext);
   const { t, i18n } = useTranslation();
   
-  // YENİ: showToast fonksiyonumuzu başlatıyoruz
   const { showToast } = useContext(ToastContext);
 
-  // --- DİNAMİK GRAFİK HESAPLAMALARI ---
   const todayMacros = { p: 0, c: 0, f: 0 };
   Object.values(meals).forEach(mealFoods => {
     mealFoods.forEach(food => {
@@ -44,8 +42,6 @@ export default function Nutrition() {
   const cPercent = totalCalories > 0 ? ((totalC * 4) / totalCalories) * 100 : 0;
   const fPercent = totalCalories > 0 ? ((totalF * 9) / totalCalories) * 100 : 0;
 
-
-  // 1. VERİLERİ ÇEKME (READ)
   useEffect(() => {
     fetchWithAuth('https://fitassist-backend.onrender.com/api/nutrition/today')
       .then(res => res.json())
@@ -81,14 +77,18 @@ export default function Nutrition() {
     setQuantity(food.unit === 'gram' ? 100 : 1);
   };
 
-  // 2. YENİ BESİN EKLEME (CREATE)
   const confirmAndAddFood = () => {
     if (!selectedFood || !modalData.mealType) return;
 
     const ratio = quantity / selectedFood.baseAmount;
+    
+    // DÜZELTME: defaultValue formatı kullanıldı
+    const translatedName = t(`food_${selectedFood.id}`, { defaultValue: selectedFood.name });
+    const translatedUnit = t(selectedFood.unit, { defaultValue: selectedFood.unit });
+
     const calculatedFood = {
       ...selectedFood,
-      name: `${selectedFood.name} (${quantity} ${selectedFood.unit})`,
+      name: `${translatedName} (${quantity} ${translatedUnit})`,
       cal: Math.round(selectedFood.cal * ratio),
       p: Number((selectedFood.p * ratio).toFixed(1)),
       c: Number((selectedFood.c * ratio).toFixed(1)),
@@ -118,17 +118,14 @@ export default function Nutrition() {
       const foodWithRealId = { ...calculatedFood, id: addedFoodId?.toString() || calculatedFood.id };
       setMeals(prev => ({ ...prev, [modalData.mealType]: [...prev[modalData.mealType], foodWithRealId] }));
       closeModal();
-      // YENİ: Başarılı ekleme bildirimi
-      showToast(t('successSaved', 'Başarıyla eklendi!'), 'success');
+      showToast(t('successSaved', { defaultValue: 'Başarıyla eklendi!' }), 'success');
     })
     .catch(err => {
       console.error("Besin ekleme hatası:", err);
-      // DÜZELTME: Çirkin alert yerine Toast bildirimi
-      showToast(t('serverError', 'Sunucuya bağlanılamadı!'), 'error');
+      showToast(t('serverError', { defaultValue: 'Sunucuya bağlanılamadı!' }), 'error');
     });
   };
 
-  // 3. YENİ EKLENEN SİLME İŞLEMİ (DELETE)
   const handleDeleteFood = async (mealName: string, foodId: string) => {
     if (!window.confirm("Bu besini silmek istediğinize emin misiniz?")) return;
 
@@ -142,15 +139,13 @@ export default function Nutrition() {
           ...prev,
           [mealName]: prev[mealName].filter(food => food.id !== foodId)
         }));
-        // YENİ: Başarılı silme bildirimi
-        showToast(t('successSaved', 'Başarıyla silindi!'), 'success');
+        showToast(t('successSaved', { defaultValue: 'Başarıyla silindi!' }), 'success');
       } else {
-        // DÜZELTME: Çirkin alert yerine Toast bildirimi
-        showToast(t('serverError', 'Besin silinemedi. Lütfen tekrar deneyin.'), 'error');
+        showToast(t('serverError', { defaultValue: 'Besin silinemedi. Lütfen tekrar deneyin.' }), 'error');
       }
     } catch (err) {
       console.error("Besin silinirken hata:", err);
-      showToast(t('serverError', 'Sunucu hatası!'), 'error');
+      showToast(t('serverError', { defaultValue: 'Sunucu hatası!' }), 'error');
     }
   };
 
@@ -163,13 +158,16 @@ export default function Nutrition() {
 
   const getDominantMacro = (food: FoodItem) => {
     const max = Math.max(food.p, food.c, food.f);
-    if (max === food.p) return { label: t('highProtein', 'Yüksek Protein'), color: 'bg-red-100 text-red-700' };
-    if (max === food.c) return { label: t('highCarbs', 'Yüksek Karb'), color: 'bg-blue-100 text-blue-700' };
-    return { label: t('highFat', 'Yüksek Yağ'), color: 'bg-yellow-100 text-yellow-700' };
+    if (max === food.p) return { label: t('highProtein', { defaultValue: 'Yüksek Protein' }), color: 'bg-red-100 text-red-700' };
+    if (max === food.c) return { label: t('highCarbs', { defaultValue: 'Yüksek Karb' }), color: 'bg-blue-100 text-blue-700' };
+    return { label: t('highFat', { defaultValue: 'Yüksek Yağ' }), color: 'bg-yellow-100 text-yellow-700' };
   };
 
   const filteredFoods = FOOD_LIBRARY.filter(food => {
-    const matchesSearch = food.name.toLowerCase().includes(searchTerm.toLowerCase());
+    // DÜZELTME: defaultValue formatı kullanıldı
+    const translatedName = t(`food_${food.id}`, { defaultValue: food.name });
+    const matchesSearch = translatedName.toLowerCase().includes(searchTerm.toLowerCase());
+    
     if (!matchesSearch) return false;
     if (!activeMacroFilter) return true;
 
@@ -184,20 +182,18 @@ export default function Nutrition() {
   return (
     <div className="p-6 md:p-10 space-y-6 pb-32 md:pb-10 max-w-5xl mx-auto animate-in fade-in duration-500">
       
-      {/* BAŞLIK */}
       <div>
-        <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight mb-1">{t('nutritionTitle', 'Beslenme')}</h1>
-        <p className="font-extrabold opacity-80">{t('nutritionDesc', 'Hedefine ulaşmak için ana öğünlerini takip et.')}</p>
+        <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight mb-1">{t('nutritionTitle', { defaultValue: 'Beslenme' })}</h1>
+        <p className="font-extrabold opacity-80">{t('nutritionDesc', { defaultValue: 'Hedefine ulaşmak için ana öğünlerini takip et.' })}</p>
       </div>
 
-      {/* ÖĞÜN KARTLARI */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {Object.entries(meals).map(([mealName, foods]) => {
           const mealCals = foods.reduce((acc, curr) => acc + curr.cal, 0);
           return (
             <div key={mealName} className="bg-white/40 backdrop-blur-xl rounded-[2rem] p-6 shadow-sm border border-white/60">
               <div className="flex items-center justify-between mb-5">
-                <h3 className="text-lg font-extrabold">{t(mealName, mealName)}</h3>
+                <h3 className="text-lg font-extrabold">{t(mealName, { defaultValue: mealName })}</h3>
                 <span className="text-sm font-extrabold bg-white/60 px-3 py-1 rounded-lg" style={{ color: themePrimary }}>{mealCals} kcal</span>
               </div>
 
@@ -223,26 +219,25 @@ export default function Nutrition() {
                       </div>
 
                       <div className="flex justify-between items-center text-xs font-extrabold w-full opacity-80">
-                        <span className="bg-white/40 px-2 py-1 rounded-md w-1/3 text-center mx-1">{t('proteinShort', 'P')}: {food.p}g</span>
-                        <span className="bg-white/40 px-2 py-1 rounded-md w-1/3 text-center mx-1">{t('carbsShort', 'K')}: {food.c}g</span>
-                        <span className="bg-white/40 px-2 py-1 rounded-md w-1/3 text-center mx-1">{t('fatShort', 'Y')}: {food.f}g</span>
+                        <span className="bg-white/40 px-2 py-1 rounded-md w-1/3 text-center mx-1">{t('proteinShort', { defaultValue: 'P' })}: {food.p}g</span>
+                        <span className="bg-white/40 px-2 py-1 rounded-md w-1/3 text-center mx-1">{t('carbsShort', { defaultValue: 'K' })}: {food.c}g</span>
+                        <span className="bg-white/40 px-2 py-1 rounded-md w-1/3 text-center mx-1">{t('fatShort', { defaultValue: 'Y' })}: {food.f}g</span>
                       </div>
                     </div>
                   ))}
                 </div>
               ) : (
-                <p className="text-sm mb-5 font-bold opacity-60">{t('noFoodAdded', 'Henüz besin eklenmedi.')}</p>
+                <p className="text-sm mb-5 font-bold opacity-60">{t('noFoodAdded', { defaultValue: 'Henüz besin eklenmedi.' })}</p>
               )}
 
               <button onClick={() => setModalData({ isOpen: true, mealType: mealName })} className="w-full py-3 rounded-xl bg-white/60 hover:bg-white border border-white/80 font-extrabold active:scale-95 transition-all flex items-center justify-center space-x-2 shadow-sm">
-                <Plus size={18} strokeWidth={3} /> <span>{t('addFoodBtn', 'Besin Ekle')}</span>
+                <Plus size={18} strokeWidth={3} /> <span>{t('addFoodBtn', { defaultValue: 'Besin Ekle' })}</span>
               </button>
             </div>
           );
         })}
       </div>
 
-      {/* DİNAMİK MAKRO GRAFİĞİ */}
       <div className="w-full bg-white/40 backdrop-blur-xl rounded-[2rem] p-6 md:p-8 border border-white/60 shadow-[0_8px_30px_rgb(0,0,0,0.04)] mt-6">
         
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
@@ -250,13 +245,13 @@ export default function Nutrition() {
             <div className="bg-white/50 p-2 rounded-xl">
               <Utensils size={24} strokeWidth={2.5} color={themePrimary} />
             </div>
-            <h2 className="text-xl font-extrabold tracking-tight">{t('macroDistribution', 'Makro Dağılımı')}</h2>
+            <h2 className="text-xl font-extrabold tracking-tight">{t('macroDistribution', { defaultValue: 'Makro Dağılımı' })}</h2>
           </div>
           
-          <div className="flex gap-4 text-xs font-bold opacity-80">
-            <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-full bg-blue-500"></div> {t('protein', 'Protein')}</div>
-            <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-full bg-yellow-400"></div> {t('fat', 'Yağ')}</div>
-            <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-full bg-amber-700"></div> {t('carbsLong', 'Karb')}</div>
+          <div className="flex flex-wrap gap-3 md:gap-4 text-xs font-bold opacity-80">
+            <div className="flex items-center gap-1.5"><div className="w-3 h-3 shrink-0 rounded-full bg-blue-500"></div> {t('protein', { defaultValue: 'Protein' })}</div>
+            <div className="flex items-center gap-1.5"><div className="w-3 h-3 shrink-0 rounded-full bg-yellow-400"></div> {t('fat', { defaultValue: 'Yağ' })}</div>
+            <div className="flex items-center gap-1.5"><div className="w-3 h-3 shrink-0 rounded-full bg-amber-700"></div> {t('carbsLong', { defaultValue: 'Karb' })}</div>
           </div>
         </div>
 
@@ -272,26 +267,25 @@ export default function Nutrition() {
               </div>
 
               <span className="mt-3 font-black text-base border-b-2" style={{ borderColor: themePrimary }}>
-                {t('todayText', 'Bugün')}
+                {t('todayText', { defaultValue: 'Bugün' })}
               </span>
 
               <div className="flex flex-col items-center mt-2 text-xs md:text-sm font-bold opacity-80 gap-0.5">
-                <span className="text-blue-600 dark:text-blue-500">{totalP}g {t('proteinShort', 'P')}</span>
-                <span className="text-amber-800 dark:text-amber-700">{totalC}g {t('carbsShort', 'C')}</span>
-                <span className="text-yellow-600 dark:text-yellow-500">{totalF}g {t('fatShort', 'Y')}</span>
+                <span className="text-blue-600 dark:text-blue-500">{totalP}g {t('proteinShort', { defaultValue: 'P' })}</span>
+                <span className="text-amber-800 dark:text-amber-700">{totalC}g {t('carbsShort', { defaultValue: 'C' })}</span>
+                <span className="text-yellow-600 dark:text-yellow-500">{totalF}g {t('fatShort', { defaultValue: 'Y' })}</span>
               </div>
             </div>
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center py-10 opacity-60 text-center animate-in fade-in">
             <BarChart3 size={48} className="mb-4" />
-            <p className="font-extrabold text-lg">{t('noGraphData', 'Grafik oluşturmak için öğünlerine besin ekle.')}</p>
+            <p className="font-extrabold text-lg">{t('noGraphData', { defaultValue: 'Grafik oluşturmak için öğünlerine besin ekle.' })}</p>
           </div>
         )}
 
       </div>
 
-      {/* MODAL KISMI */}
       {modalData.isOpen && (
         <div className="fixed inset-0 z-[100] flex flex-col justify-end bg-black/20 backdrop-blur-sm animate-in fade-in duration-300">
           <div className="rounded-t-[2.5rem] h-[90vh] flex flex-col shadow-2xl border-t border-white/50 animate-in slide-in-from-bottom-full duration-400 max-w-2xl mx-auto w-full" style={{ backgroundColor: themeBg }}>
@@ -302,15 +296,16 @@ export default function Nutrition() {
                   <button onClick={() => setSelectedFood(null)} className="p-2 bg-white/50 rounded-full active:scale-90 transition-all">
                     <ChevronLeft size={20} color={themePrimary} />
                   </button>
-                  <h2 className="text-2xl font-extrabold flex-1 text-center pr-10">{t('setAmount', 'Miktar Belirle')}</h2>
+                  <h2 className="text-2xl font-extrabold flex-1 text-center pr-10">{t('setAmount', { defaultValue: 'Miktar Belirle' })}</h2>
                 </div>
 
                 <div className="flex-1 flex flex-col items-center justify-center space-y-8">
                   <div className="text-center">
-                    <h3 className="text-3xl font-black mb-2">{selectedFood.name}</h3>
+                    {/* DÜZELTME: defaultValue formatı kullanıldı */}
+                    <h3 className="text-3xl font-black mb-2">{t(`food_${selectedFood.id}`, { defaultValue: selectedFood.name })}</h3>
                     {selectedFood.info && (
                       <p className="text-sm font-bold opacity-70 bg-white/40 p-3 rounded-xl border border-white/50">
-                        💡 {selectedFood.info}
+                        💡 {t(`info_${selectedFood.id}`, { defaultValue: selectedFood.info })}
                       </p>
                     )}
                   </div>
@@ -331,28 +326,28 @@ export default function Nutrition() {
                           className="w-32 bg-white text-center text-4xl font-black border-2 rounded-2xl py-2 focus:outline-none"
                           style={{ borderColor: themePrimary }}
                         />
-                        <span className="text-2xl font-bold opacity-70">{t('gram', 'gram')}</span>
+                        <span className="text-2xl font-bold opacity-70">{t('gram', { defaultValue: 'gram' })}</span>
                       </div>
                     )}
                   </div>
 
                   <div className="flex justify-between w-full max-w-xs bg-white/40 p-4 rounded-2xl border border-white/60">
-                    <div className="text-center"><p className="text-xs font-bold opacity-70">{t('calories', 'Kalori')}</p><p className="font-black">{Math.round(selectedFood.cal * (quantity / selectedFood.baseAmount))} kcal</p></div>
-                    <div className="text-center"><p className="text-xs font-bold opacity-70">{t('protein', 'Protein')}</p><p className="font-black">{Number((selectedFood.p * (quantity / selectedFood.baseAmount)).toFixed(1))}g</p></div>
-                    <div className="text-center"><p className="text-xs font-bold opacity-70">{t('carbs', 'Karb')}</p><p className="font-black">{Number((selectedFood.c * (quantity / selectedFood.baseAmount)).toFixed(1))}g</p></div>
-                    <div className="text-center"><p className="text-xs font-bold opacity-70">{t('fat', 'Yağ')}</p><p className="font-black">{Number((selectedFood.f * (quantity / selectedFood.baseAmount)).toFixed(1))}g</p></div>
+                    <div className="text-center"><p className="text-xs font-bold opacity-70">{t('calories', { defaultValue: 'Kalori' })}</p><p className="font-black">{Math.round(selectedFood.cal * (quantity / selectedFood.baseAmount))} kcal</p></div>
+                    <div className="text-center"><p className="text-xs font-bold opacity-70">{t('protein', { defaultValue: 'Protein' })}</p><p className="font-black">{Number((selectedFood.p * (quantity / selectedFood.baseAmount)).toFixed(1))}g</p></div>
+                    <div className="text-center"><p className="text-xs font-bold opacity-70">{t('carbs', { defaultValue: 'Karb' })}</p><p className="font-black">{Number((selectedFood.c * (quantity / selectedFood.baseAmount)).toFixed(1))}g</p></div>
+                    <div className="text-center"><p className="text-xs font-bold opacity-70">{t('fat', { defaultValue: 'Yağ' })}</p><p className="font-black">{Number((selectedFood.f * (quantity / selectedFood.baseAmount)).toFixed(1))}g</p></div>
                   </div>
                 </div>
 
                 <button onClick={confirmAndAddFood} className="w-full py-4 rounded-2xl bg-white/60 hover:bg-white border border-white/80 font-black text-lg active:scale-95 transition-all shadow-sm">
-                  {t('addToMealBtn', 'Öğüne Ekle')}
+                  {t('addToMealBtn', { defaultValue: 'Öğüne Ekle' })}
                 </button>
               </div>
             ) : (
               <>
                 <div className="flex flex-col p-6 border-b border-white/20 gap-4">
                   <div className="flex items-center justify-between">
-                    <h2 className="text-2xl font-extrabold">{t(modalData.mealType, modalData.mealType)} - {t('selectFood', 'Besin Seç')}</h2>
+                    <h2 className="text-2xl font-extrabold">{t(modalData.mealType, { defaultValue: modalData.mealType })} - {t('selectFood', { defaultValue: 'Besin Seç' })}</h2>
                     <button onClick={closeModal} className="p-2 bg-white/50 rounded-full active:scale-90 transition-all"><X size={20} color={themePrimary} /></button>
                   </div>
                   
@@ -364,7 +359,7 @@ export default function Nutrition() {
                       type="text" 
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
-                      placeholder={t('searchFoodPlaceholder', 'Besin ara... (Örn: Tavuk, Yulaf)')} 
+                      placeholder={t('searchFoodPlaceholder', { defaultValue: 'Besin ara... (Örn: Tavuk, Yulaf)' })} 
                       className="w-full bg-white/60 border border-white/80 rounded-xl pl-11 pr-4 py-3 text-sm font-extrabold focus:outline-none transition-all placeholder-current opacity-80"
                     />
                   </div>
@@ -374,19 +369,19 @@ export default function Nutrition() {
                       onClick={() => setActiveMacroFilter(activeMacroFilter === 'Protein' ? null : 'Protein')}
                       className={`flex-1 flex items-center justify-center gap-1 py-2 rounded-lg text-xs font-extrabold transition-all border ${activeMacroFilter === 'Protein' ? 'bg-red-500 text-white border-red-600 shadow-md' : 'bg-white/50 border-white/50 opacity-70 hover:opacity-100'}`}
                     >
-                      <Beef size={14} /> {t('protein', 'Protein')}
+                      <Beef size={14} /> {t('protein', { defaultValue: 'Protein' })}
                     </button>
                     <button 
                       onClick={() => setActiveMacroFilter(activeMacroFilter === 'Karb' ? null : 'Karb')}
                       className={`flex-1 flex items-center justify-center gap-1 py-2 rounded-lg text-[10px] sm:text-xs font-extrabold transition-all border ${activeMacroFilter === 'Karb' ? 'bg-blue-500 text-white border-blue-600 shadow-md' : 'bg-white/50 border-white/50 opacity-70 hover:opacity-100'}`}
                     >
-                      <Wheat size={14} /> {t('carbsLong', 'Karbonhidrat')}
+                      <Wheat size={14} /> {t('carbsLong', { defaultValue: 'Karbonhidrat' })}
                     </button>
                     <button 
                       onClick={() => setActiveMacroFilter(activeMacroFilter === 'Yağ' ? null : 'Yağ')}
                       className={`flex-1 flex items-center justify-center gap-1 py-2 rounded-lg text-xs font-extrabold transition-all border ${activeMacroFilter === 'Yağ' ? 'bg-yellow-500 text-white border-yellow-600 shadow-md' : 'bg-white/50 border-white/50 opacity-70 hover:opacity-100'}`}
                     >
-                      <Droplet size={14} /> {t('fat', 'Yağ')}
+                      <Droplet size={14} /> {t('fat', { defaultValue: 'Yağ' })}
                     </button>
                   </div>
                 </div>
@@ -399,13 +394,14 @@ export default function Nutrition() {
                         <button key={food.id} onClick={() => handleFoodSelect(food)} className="w-full flex items-center justify-between p-4 rounded-2xl bg-white/40 border border-white/60 hover:bg-white/60 active:scale-95 transition-all text-left shadow-sm">
                           <div className="flex-1">
                             <div className="flex items-center gap-3 mb-2">
-                              <p className="font-bold">{food.name}</p>
+                              {/* DÜZELTME: defaultValue formatı kullanıldı */}
+                              <p className="font-bold">{t(`food_${food.id}`, { defaultValue: food.name })}</p>
                               <span className={`text-[10px] font-black px-2 py-1 rounded-md ${macroBadge.color}`}>
                                 {macroBadge.label}
                               </span>
                             </div>
                             <p className="text-xs font-bold opacity-70">
-                              {food.baseAmount} {t(food.unit, food.unit)} : {food.cal} kcal | P: {food.p}g | K: {food.c}g | Y: {food.f}g
+                              {food.baseAmount} {t(food.unit, { defaultValue: food.unit })} : {food.cal} kcal | P: {food.p}g | K: {food.c}g | Y: {food.f}g
                             </p>
                           </div>
                           <div className="bg-white/50 p-2 rounded-full ml-2"><Plus size={20} strokeWidth={3} color={themePrimary} /></div>
@@ -414,7 +410,7 @@ export default function Nutrition() {
                     })
                   ) : (
                     <div className="text-center py-10 opacity-60 font-bold">
-                      {t('noFoodFound', 'Bu kritere uygun besin bulunamadı.')}
+                      {t('noFoodFound', { defaultValue: 'Bu kritere uygun besin bulunamadı.' })}
                     </div>
                   )}
                 </div>
