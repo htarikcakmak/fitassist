@@ -10,18 +10,16 @@ export const fetchWithAuth = async (endpoint: string, options: RequestInit = {})
     token = user.token || ''; 
   }
 
+  // YENİ EKLENEN KISIM: 415 ve 400 hatalarını önlemek için Content-Type eklendi.
   const headers = {
-    ...options.headers,
-    'Authorization': `Bearer ${token}`
+    'Content-Type': 'application/json', // Sunucuya verinin JSON olduğunu söyler
+    'Authorization': `Bearer ${token}`,
+    ...options.headers // Eğer dışarıdan ekstra header gelirse eskisini ezmesin diye alta koyduk
   };
 
-  // YENİ EKLENEN KONTROL MEKANİZMASI:
-  // Gelen endpoint 'http' ile başlıyorsa zaten tam bir linktir, olduğu gibi kullan.
-  // Başlamıyorsa (örneğin sadece '/api/users/register' ise) API_BASE_URL ile birleştir.
   const isFullUrl = endpoint.startsWith('http');
   const finalUrl = isFullUrl ? endpoint : `${API_BASE_URL}${endpoint}`;
 
-  // İsteği artık hatalı birleşen URL ile değil, akıllı 'finalUrl' ile atıyoruz
   const response = await fetch(finalUrl, {
     ...options,
     headers
