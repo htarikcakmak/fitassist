@@ -3,9 +3,10 @@ import { Plus, Moon, CalendarDays, ChevronDown, ChevronUp } from 'lucide-react';
 import { ThemeContext } from '../context/ThemeContext';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Cell } from 'recharts';
 import { useTranslation } from 'react-i18next';
-// YENİ: Bildirim sistemimizi içe aktarıyoruz
 import { ToastContext } from '../context/ToastContext';
 import { fetchWithAuth } from '../utils/api';
+// YENİ: Yükleme ekranı (Loader) içe aktarıldı
+import { Loader } from '../components/Loader';
 
 type SleepLog = {
   id?: number;
@@ -23,11 +24,12 @@ export default function Sleep() {
   
   const [showDatePicker, setShowDatePicker] = useState(false);
   
+  // YENİ: Yükleme ekranı stateleri
+  const [isLoading, setIsLoading] = useState(false);
+  const [loadingMessage, setLoadingMessage] = useState('');
+  
   const { themePrimary } = useContext(ThemeContext);
-  
   const { t, i18n } = useTranslation();
-  
-  // YENİ: showToast fonksiyonumuzu çağırıyoruz
   const { showToast } = useContext(ToastContext);
 
   useEffect(() => {
@@ -45,9 +47,9 @@ export default function Sleep() {
       .catch(() => console.log("Arka plan kapalı, yerel veriler kullanılıyor."));
   }, []);
 
+  // GÜNCELLENDİ: Uyku Kaydetme fonksiyonuna akıllı zamanlayıcı eklendi
   const handleSaveSleep = () => {
     if (!date || !hours) {
-      // DÜZELTME: Çirkin alert yerine şık hata bildirimi (Toast)
       showToast(t('alertEnterSleepTime', 'Lütfen uyku süresini gir!'), 'error');
       return;
     }
@@ -56,6 +58,13 @@ export default function Sleep() {
       date: date, 
       hours: parseFloat(hours)
     };
+
+    setIsLoading(true);
+    setLoadingMessage(t('saving', { defaultValue: 'Kaydediliyor...' }));
+
+    const wakeUpTimeout = setTimeout(() => {
+      setLoadingMessage(t('serverWakingUp', { defaultValue: 'Sunucu uykudan uyanıyor, bu işlem 30-40 saniye sürebilir. Lütfen bekleyin...' }));
+    }, 3000);
 
     fetchWithAuth('https://fitassist-backend.onrender.com/api/sleep/add', {
       method: 'POST',
@@ -73,7 +82,6 @@ export default function Sleep() {
       return responsePayload;
     })
     .then(() => {
-      // DÜZELTME: Çirkin alert yerine çoklu dil destekli şık başarı bildirimi (Toast)
       showToast(t('successSaved', 'Başarıyla kaydedildi!'), 'success');
 
       setLogs([...logs, newLog]);
@@ -83,8 +91,11 @@ export default function Sleep() {
     })
     .catch(err => {
       console.error("Uyku ekleme hatası:", err);
-      // DÜZELTME: Çirkin alert yerine şık hata bildirimi
       showToast(t('serverError', 'Sunucuya bağlanılamadı!'), 'error');
+    })
+    .finally(() => {
+      clearTimeout(wakeUpTimeout);
+      setIsLoading(false);
     });
   };
 
@@ -100,6 +111,11 @@ export default function Sleep() {
     
     return d.toLocaleDateString(i18n.language || 'tr', { day: '2-digit', month: 'short' });
   };
+
+  // EĞER İŞLEM SÜRÜYORSA LOADER BİLEŞENİNİ GÖSTER
+  if (isLoading) {
+    return <Loader message={loadingMessage} />;
+  }
 
   return (
     <div className="p-6 md:p-10 space-y-8 pb-32 md:pb-10 max-w-5xl mx-auto animate-in fade-in duration-500">

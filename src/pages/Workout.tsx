@@ -3,9 +3,10 @@ import { Dumbbell, Plus, Trash2, History, CalendarCheck } from 'lucide-react';
 import { ThemeContext } from '../context/ThemeContext';
 import { useTranslation } from 'react-i18next';
 import { ToastContext } from '../context/ToastContext';
-// 1. ADIM: Özel pencere bileşenimizi (modal) içe aktarıyoruz
 import ConfirmModal from '../components/ConfirmModal';
 import { fetchWithAuth } from '../utils/api';
+// YENİ: Yükleme ekranı içe aktarıldı
+import { Loader } from '../components/Loader';
 
 interface WorkoutRecord {
   id: number;
@@ -32,8 +33,11 @@ export default function Workout() {
   const [category, setCategory] = useState<string>('Push');
   const [activeTab, setActiveTab] = useState<'today' | 'history'>('today');
 
-  // 2. ADIM: Silinmek istenen kaydın ID'sini tutacak State
   const [deleteId, setDeleteId] = useState<number | null>(null);
+
+  // YENİ: Yükleme ekranı durumları
+  const [isLoading, setIsLoading] = useState(false);
+  const [loadingMessage, setLoadingMessage] = useState('');
 
   useEffect(() => {
     fetchWithAuthWorkouts();
@@ -52,6 +56,7 @@ export default function Workout() {
     }
   };
 
+  // GÜNCELLENDİ: Kaydetme işlemine akıllı zamanlayıcı eklendi
   const handleSave = async () => {
     if (!exerciseName || weight === '' || sets === '' || reps === '' || !category) {
       showToast(t('alertFillAll', 'Lütfen tüm alanları doldurun ve bir kategori seçin!'), 'error'); 
@@ -66,6 +71,13 @@ export default function Workout() {
       reps: Number(reps),
       date: new Date().toISOString().split('T')[0]
     };
+
+    setIsLoading(true);
+    setLoadingMessage(t('saving', { defaultValue: 'Kaydediliyor...' }));
+
+    const wakeUpTimeout = setTimeout(() => {
+      setLoadingMessage(t('serverWakingUp', { defaultValue: 'Sunucu uykudan uyanıyor, bu işlem 30-40 saniye sürebilir. Lütfen bekleyin...' }));
+    }, 3000);
 
     try {
       const res = await fetchWithAuth('https://fitassist-backend.onrender.com/api/workout/add', {
@@ -89,17 +101,26 @@ export default function Workout() {
     } catch (err) {
       console.error("Add error:", err);
       showToast(t('serverError', 'Sunucuya bağlanılamadı!'), 'error');
+    } finally {
+      clearTimeout(wakeUpTimeout);
+      setIsLoading(false);
     }
   };
 
-  // 3. ADIM: Çöp kutusuna basıldığında doğrudan silmek yerine Modal'ı açmak için ID'yi kaydet
   const handleDeleteRequest = (id: number) => {
     setDeleteId(id);
   };
 
-  // 4. ADIM: Modal'da "Tamam" butonuna basılınca çalışacak asıl silme fonksiyonu
+  // GÜNCELLENDİ: Silme işlemine akıllı zamanlayıcı eklendi
   const confirmDelete = async () => {
     if (deleteId === null) return;
+
+    setIsLoading(true);
+    setLoadingMessage(t('deleting', { defaultValue: 'Siliniyor...' }));
+
+    const wakeUpTimeout = setTimeout(() => {
+      setLoadingMessage(t('serverWakingUp', { defaultValue: 'Sunucu uykudan uyanıyor, bu işlem 30-40 saniye sürebilir. Lütfen bekleyin...' }));
+    }, 3000);
 
     try {
       const res = await fetch(`https://fitassist-backend.onrender.com/api/workout/delete/${deleteId}`, {
@@ -116,7 +137,8 @@ export default function Workout() {
       console.error("Delete error:", err);
       showToast(t('serverError', 'Sunucu hatası!'), 'error');
     } finally {
-      // İşlem bitince Modal'ı kapat
+      clearTimeout(wakeUpTimeout);
+      setIsLoading(false);
       setDeleteId(null);
     }
   };
@@ -142,10 +164,14 @@ export default function Workout() {
 
   const sortedHistoryDates = Object.keys(groupedHistory).sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
 
+  // EĞER İŞLEM SÜRÜYORSA LOADER BİLEŞENİNİ GÖSTER
+  if (isLoading) {
+    return <Loader message={loadingMessage} />;
+  }
+
   return (
     <div className="p-6 md:p-10 space-y-6 pb-32 md:pb-10 max-w-5xl mx-auto animate-in fade-in duration-500 relative">
       
-      {/* YENİ: Uyarı Penceremiz. deleteId doluysa ekranda belirir */}
       <ConfirmModal 
         isOpen={deleteId !== null} 
         message={t('confirmDeleteWorkout', 'Bu antrenmanı silmek istediğinize emin misiniz?')} 
@@ -275,7 +301,6 @@ export default function Workout() {
                         </div>
                       </div>
                       
-                      {/* DÜZELTME: Doğrudan silmek yerine pencereyi tetikliyor */}
                       <button onClick={() => handleDeleteRequest(workout.id)} className="p-3 bg-red-500/10 hover:bg-red-500/20 rounded-xl text-red-600 active:scale-90 transition-all shrink-0 ml-4">
                         <Trash2 size={20} />
                       </button>
@@ -320,7 +345,6 @@ export default function Workout() {
                               </div>
                             </div>
                             
-                            {/* DÜZELTME: Doğrudan silmek yerine pencereyi tetikliyor */}
                             <button onClick={() => handleDeleteRequest(workout.id)} className="p-2.5 bg-red-500/5 hover:bg-red-500/10 rounded-lg text-red-500 active:scale-90 transition-all shrink-0 ml-4">
                               <Trash2 size={16} />
                             </button>

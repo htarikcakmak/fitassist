@@ -3,9 +3,10 @@ import { Droplet, Plus, Trash2, BarChart3, Edit3 } from 'lucide-react';
 import { ThemeContext } from '../context/ThemeContext';
 import { useTranslation } from 'react-i18next';
 import { ToastContext } from '../context/ToastContext';
-// YENİ: Yaptığımız şık pencereyi içe aktarıyoruz
 import ConfirmModal from '../components/ConfirmModal';
 import { fetchWithAuth } from '../utils/api';
+// YENİ: Yükleme ekranı (Loader) içe aktarıldı
+import { Loader } from '../components/Loader';
 
 interface WaterRecord {
   id: number;
@@ -21,8 +22,11 @@ export default function Water() {
   const [waterData, setWaterData] = useState<WaterRecord[]>([]);
   const [amount, setAmount] = useState<number | ''>('');
   
-  // YENİ: Silinmek üzere seçilen kaydın ID'sini tutacak State
   const [deleteId, setDeleteId] = useState<number | null>(null);
+  
+  // YENİ: Yükleme ekranı stateleri
+  const [isLoading, setIsLoading] = useState(false);
+  const [loadingMessage, setLoadingMessage] = useState('');
   
   const [dailyGoal, setDailyGoal] = useState<number>(() => {
     const saved = localStorage.getItem('dailyWaterGoal');
@@ -46,6 +50,7 @@ export default function Water() {
     }
   };
 
+  // GÜNCELLENDİ: Su Kaydetme fonksiyonuna akıllı zamanlayıcı eklendi
   const handleSave = async (quickAmount?: number) => {
     const valueToAdd = quickAmount || Number(amount);
     if (!valueToAdd || valueToAdd <= 0) {
@@ -53,6 +58,16 @@ export default function Water() {
       return;
     }
     const today = new Date().toISOString().split('T')[0];
+
+    // Yükleme ekranını başlat
+    setIsLoading(true);
+    setLoadingMessage(t('saving', { defaultValue: 'Kaydediliyor...' }));
+
+    // Sunucu uyuyorsa 3 saniye sonra mesajı değiştir
+    const wakeUpTimeout = setTimeout(() => {
+      setLoadingMessage(t('serverWakingUp', { defaultValue: 'Sunucu uykudan uyanıyor, bu işlem 30-40 saniye sürebilir. Lütfen bekleyin...' }));
+    }, 3000);
+
     try {
       const res = await fetchWithAuth('https://fitassist-backend.onrender.com/api/water/add', {
         method: 'POST',
@@ -68,17 +83,27 @@ export default function Water() {
       }
     } catch (err) {
       showToast(t('serverError', 'Sunucuya bağlanılamadı!'), 'error');
+    } finally {
+      // İşlem bitince zamanlayıcıyı ve ekranı kapat
+      clearTimeout(wakeUpTimeout);
+      setIsLoading(false);
     }
   };
 
-  // YENİ: Çöp kutusuna basınca doğrudan silmek yerine Modal'ı açmak için ID'yi kaydediyoruz
   const handleDeleteRequest = (id: number) => {
     setDeleteId(id);
   };
 
-  // YENİ: Modal'da "Tamam" butonuna basınca asıl silme işlemini yapacak fonksiyon
+  // GÜNCELLENDİ: Silme fonksiyonuna akıllı zamanlayıcı eklendi
   const confirmDelete = async () => {
     if (deleteId === null) return;
+
+    setIsLoading(true);
+    setLoadingMessage(t('deleting', { defaultValue: 'Siliniyor...' }));
+
+    const wakeUpTimeout = setTimeout(() => {
+      setLoadingMessage(t('serverWakingUp', { defaultValue: 'Sunucu uykudan uyanıyor, bu işlem 30-40 saniye sürebilir. Lütfen bekleyin...' }));
+    }, 3000);
 
     try {
       const res = await fetchWithAuth(`https://fitassist-backend.onrender.com/api/water/delete/${deleteId}`, {
@@ -94,7 +119,9 @@ export default function Water() {
     } catch (err) {
       showToast(t('serverError', 'Sunucuya bağlanılamadı!'), 'error');
     } finally {
-      setDeleteId(null); // İşlem bitince Modal'ı kapat
+      clearTimeout(wakeUpTimeout);
+      setIsLoading(false);
+      setDeleteId(null); 
     }
   };
 
@@ -124,10 +151,14 @@ export default function Water() {
     return { date: dateStr, dayName, total: dailyTotal };
   });
 
+  // EĞER İŞLEM SÜRÜYORSA LOADER BİLEŞENİNİ GÖSTER
+  if (isLoading) {
+    return <Loader message={loadingMessage} />;
+  }
+
   return (
     <div className="p-6 md:p-10 space-y-6 pb-32 md:pb-10 max-w-5xl mx-auto animate-in fade-in duration-500 relative">
       
-      {/* YENİ: Modal Bileşenimizi ekliyoruz */}
       <ConfirmModal 
         isOpen={deleteId !== null} 
         message={t('confirmDeleteWater', 'Bu su kaydını silmek istediğinize emin misiniz?')} 
@@ -264,7 +295,7 @@ export default function Water() {
                       <p className="font-extrabold text-lg">{record.amount} ml</p>
                     </div>
                     <button 
-                      onClick={() => handleDeleteRequest(record.id)} // DÜZELTME: Doğrudan silmek yerine Modal'ı tetikliyor
+                      onClick={() => handleDeleteRequest(record.id)}
                       className="p-3 bg-red-500/10 hover:bg-red-500/20 rounded-xl text-red-600 active:scale-90 transition-all shrink-0"
                     >
                       <Trash2 size={18} />

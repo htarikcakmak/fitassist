@@ -13,7 +13,6 @@ export default function Profile() {
   const { showToast } = useContext(ToastContext);
   
   const [isLoading, setIsLoading] = useState(false);
-  // Yükleme ekranında görünecek dinamik mesajı tuttuğumuz değişken (YENİ)
   const [loadingMessage, setLoadingMessage] = useState('');
 
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -65,9 +64,13 @@ export default function Profile() {
       return;
     }
 
-    // GİRİŞ YAPILIRKEN GÖRÜNECEK MESAJI BELİRLİYORUZ
-    setLoadingMessage('Sunucu uyandırılıyor, giriş yapılıyor...');
     setIsLoading(true);
+    setLoadingMessage(authMode === 'register' ? 'Kayıt oluşturuluyor...' : 'Giriş yapılıyor...');
+
+    // GÜNCELLENDİ: Akıllı Zamanlayıcı (Smart Timeout)
+    const wakeUpTimeout = setTimeout(() => {
+      setLoadingMessage(t('serverWakingUp', { defaultValue: 'Sunucu uykudan uyanıyor, bu işlem 30-40 saniye sürebilir. Lütfen bekleyin...' }));
+    }, 3000);
 
     const endpoint = authMode === 'register' ? '/register' : '/login';
     const url = `https://fitassist-backend.onrender.com/api/users${endpoint}`;
@@ -109,6 +112,7 @@ export default function Profile() {
       console.error("fetchWithAuth error:", error);
       showToast(t('serverError', 'Sunucuya bağlanılamadı!'), 'error');
     } finally {
+      clearTimeout(wakeUpTimeout);
       setIsLoading(false);
     }
   };
@@ -122,9 +126,13 @@ export default function Profile() {
   };
 
   const handleSaveProfile = async () => {
-    // PROFİL GÜNCELLENİRKEN GÖRÜNECEK MESAJI BELİRLİYORUZ
-    setLoadingMessage('Profil bilgileri kaydediliyor...');
     setIsLoading(true);
+    setLoadingMessage('Profil bilgileri kaydediliyor...');
+    
+    // GÜNCELLENDİ: Akıllı Zamanlayıcı (Smart Timeout)
+    const wakeUpTimeout = setTimeout(() => {
+      setLoadingMessage(t('serverWakingUp', { defaultValue: 'Sunucu uykudan uyanıyor, bu işlem 30-40 saniye sürebilir. Lütfen bekleyin...' }));
+    }, 3000);
     
     const updatedUser = { 
       id: userId, 
@@ -168,6 +176,7 @@ export default function Profile() {
       console.error("Arka plan güncelleme hatası:", err);
       showToast("Sunucu ile bağlantı koptu!", "error");
     } finally {
+      clearTimeout(wakeUpTimeout);
       setIsLoading(false);
     }
   };
@@ -186,7 +195,6 @@ export default function Profile() {
     }
   };
 
-  // Yükleme sırasında belirlenen mesajı Loader'a gönderiyoruz
   if (isLoading) {
     return <Loader message={loadingMessage} />;
   }

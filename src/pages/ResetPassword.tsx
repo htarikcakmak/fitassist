@@ -2,18 +2,25 @@ import { useState, useContext } from 'react';
 import { ToastContext } from '../context/ToastContext';
 import { ThemeContext } from '../context/ThemeContext';
 import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
+// YENİ: Yükleme ekranı içe aktarıldı
+import { Loader } from '../components/Loader';
 
 export default function ResetPassword() {
   const [newPassword, setNewPassword] = useState('');
-  // const { t } = useTranslation();
+  const { t } = useTranslation();
   const { showToast } = useContext(ToastContext);
   const { themePrimary } = useContext(ThemeContext);
   
-  // URL'deki token değerini okumak için gerekli kanca
   const [searchParams] = useSearchParams();
   const token = searchParams.get('token');
   const navigate = useNavigate();
 
+  // YENİ: Yükleme ekranı durumları
+  const [isLoading, setIsLoading] = useState(false);
+  const [loadingMessage, setLoadingMessage] = useState('');
+
+  // GÜNCELLENDİ: Şifre sıfırlama işlemine akıllı zamanlayıcı eklendi
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -21,6 +28,13 @@ export default function ResetPassword() {
       showToast('Geçersiz veya eksik bağlantı.', 'error');
       return;
     }
+
+    setIsLoading(true);
+    setLoadingMessage(t('saving', { defaultValue: 'Şifre güncelleniyor...' }));
+
+    const wakeUpTimeout = setTimeout(() => {
+      setLoadingMessage(t('serverWakingUp', { defaultValue: 'Sunucu uykudan uyanıyor, bu işlem 30-40 saniye sürebilir. Lütfen bekleyin...' }));
+    }, 3000);
 
     try {
     const response = await fetch('https://fitassist-backend.onrender.com/api/users/reset-password', {
@@ -37,13 +51,19 @@ export default function ResetPassword() {
         showToast(data.message, 'error');
       }
     } catch (error) {
-
       const errorMessage = error instanceof Error ? error.message : String(error);
       alert("GERÇEK HATA: " + errorMessage + " \nDetay: " + JSON.stringify(error));
+      console.log("sunucuya bağlanamadı");
+    } finally {
+      clearTimeout(wakeUpTimeout);
+      setIsLoading(false);
     }
-
-    console.log("sunucuya bağlanamadı");
   };
+
+  // EĞER İŞLEM SÜRÜYORSA LOADER BİLEŞENİNİ GÖSTER
+  if (isLoading) {
+    return <Loader message={loadingMessage} />;
+  }
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen p-6 animate-in fade-in duration-500">

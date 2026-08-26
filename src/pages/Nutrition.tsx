@@ -6,6 +6,7 @@ import type { FoodItem } from '../data/foodLibrary';
 import { useTranslation } from 'react-i18next'; 
 import { ToastContext } from '../context/ToastContext';
 import { fetchWithAuth } from '../utils/api';
+import { Loader } from '../components/Loader';
 
 type MealsState = { [key: string]: FoodItem[] };
 
@@ -17,11 +18,11 @@ export default function Nutrition() {
   const [activeMacroFilter, setActiveMacroFilter] = useState<string | null>(null);
   const [selectedFood, setSelectedFood] = useState<FoodItem | null>(null);
   const [quantity, setQuantity] = useState<number>(0);
-
-  // YENİ: Kütüphane ve Kendin Ekle sekmeleri arası geçiş
-  const [modalTab, setModalTab] = useState<'library' | 'custom'>('library');
   
-  // YENİ: Özel eklenen besinin verileri
+  const [isLoading, setIsLoading] = useState(false);
+  const [loadingMessage, setLoadingMessage] = useState('');
+
+  const [modalTab, setModalTab] = useState<'library' | 'custom'>('library');
   const [customFood, setCustomFood] = useState({ name: '', cal: '', p: '', c: '', f: '' });
 
   const { themeBg, themePrimary } = useContext(ThemeContext);
@@ -81,8 +82,16 @@ export default function Nutrition() {
     setQuantity(food.unit === 'gram' ? 100 : 1);
   };
 
-  // YENİ: Hem kütüphane hem özel besinler için ortak kaydetme fonksiyonu
+  // GÜNCELLENMİŞ: Akıllı Zamanlayıcı (Smart Timeout) İçeren Kaydetme Fonksiyonu
   const saveFoodToBackend = (calculatedFood: any) => {
+    setIsLoading(true);
+    setLoadingMessage(t('saving', { defaultValue: 'Kaydediliyor...' }));
+
+    // Sunucu uykudaysa (cevap 3 saniyeden uzun sürerse) kullanıcıyı bilgilendir
+    const wakeUpTimeout = setTimeout(() => {
+      setLoadingMessage(t('serverWakingUp', { defaultValue: 'Sunucu uykudan uyanıyor, bu işlem 30-40 saniye sürebilir. Lütfen bekleyin...' }));
+    }, 3000);
+
     const payload = {
       mealName: modalData.mealType,
       foodName: calculatedFood.name,
@@ -111,6 +120,10 @@ export default function Nutrition() {
     .catch(err => {
       console.error("Besin ekleme hatası:", err);
       showToast(t('serverError', { defaultValue: 'Sunucuya bağlanılamadı!' }), 'error');
+    })
+    .finally(() => {
+      clearTimeout(wakeUpTimeout); // İşlem bittiğinde kronometreyi iptal et
+      setIsLoading(false); // Yükleme ekranını kapat
     });
   };
 
@@ -133,7 +146,6 @@ export default function Nutrition() {
     saveFoodToBackend(calculatedFood);
   };
 
-  // YENİ: Özel besin ekleme butonu tetikleyicisi
   const handleAddCustomFood = () => {
     if (!customFood.name || !customFood.cal) {
       showToast(t('fillRequiredFields', { defaultValue: 'Lütfen isim ve kalori alanlarını doldurun!' }), 'error');
@@ -157,6 +169,14 @@ export default function Nutrition() {
   const handleDeleteFood = async (mealName: string, foodId: string) => {
     if (!window.confirm("Bu besini silmek istediğinize emin misiniz?")) return;
 
+    // Silme işlemi için de Loader'ı aktif edelim
+    setIsLoading(true);
+    setLoadingMessage(t('deleting', { defaultValue: 'Siliniyor...' }));
+
+    const wakeUpTimeout = setTimeout(() => {
+      setLoadingMessage(t('serverWakingUp', { defaultValue: 'Sunucu uykudan uyanıyor, bu işlem 30-40 saniye sürebilir. Lütfen bekleyin...' }));
+    }, 3000);
+
     try {
       const res = await fetchWithAuth(`https://fitassist-backend.onrender.com/api/nutrition/delete/${foodId}`, {
         method: 'DELETE'
@@ -174,6 +194,9 @@ export default function Nutrition() {
     } catch (err) {
       console.error("Besin silinirken hata:", err);
       showToast(t('serverError', { defaultValue: 'Sunucu hatası!' }), 'error');
+    } finally {
+      clearTimeout(wakeUpTimeout);
+      setIsLoading(false);
     }
   };
 
@@ -207,6 +230,11 @@ export default function Nutrition() {
     
     return false;
   });
+
+  // EĞER İŞLEM SÜRÜYORSA LOADER BİLEŞENİNİ GÖSTER
+  if (isLoading) {
+    return <Loader message={loadingMessage} />;
+  }
 
   return (
     <div className="p-6 md:p-10 space-y-6 pb-32 md:pb-10 max-w-5xl mx-auto animate-in fade-in duration-500">

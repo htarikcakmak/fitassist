@@ -4,6 +4,8 @@ import { ThemeContext } from '../context/ThemeContext';
 import { ToastContext } from '../context/ToastContext';
 import { useTranslation } from 'react-i18next';
 import { fetchWithAuth } from '../utils/api';
+// YENİ: Yükleme ekranı içe aktarıldı
+import { Loader } from '../components/Loader';
 
 export default function Settings() {
   const { themeBg, themePrimary, setTheme } = useContext(ThemeContext);
@@ -12,11 +14,13 @@ export default function Settings() {
 
   const [userId, setUserId] = useState<number | null>(null);
   
-  // Ekranda anlık değişecek ama henüz kaydedilmemiş (Taslak) tema ayarları
   const [selectedBg, setSelectedBg] = useState(themeBg);
   const [selectedPrimary, setSelectedPrimary] = useState(themePrimary);
 
-  // Sayfa yüklendiğinde kullanıcının ID'sini hafızadan alıyoruz
+  // YENİ: Yükleme ekranı durumları
+  const [isLoading, setIsLoading] = useState(false);
+  const [loadingMessage, setLoadingMessage] = useState('');
+
   useEffect(() => {
     const storedUser = localStorage.getItem('fitassist_user') || sessionStorage.getItem('fitassist_user');
     if (storedUser) {
@@ -34,21 +38,26 @@ export default function Settings() {
     { id: 'peach', bg: '#ffdab9', primary: '#4a0e4e', label: t('palettePeach', 'Şeftali / Koyu Mor') },
   ];
 
-  // Kullanıcı herhangi bir temaya veya özel renge tıkladığında ekranı anında güncelleyen fonksiyon
   const handlePreviewTheme = (bg: string, primary: string) => {
     setSelectedBg(bg);
     setSelectedPrimary(primary);
     setTheme(bg, primary); 
   };
 
-  // Ayarları veritabanına ve yerel hafızaya kalıcı olarak kaydeden fonksiyon
+  // GÜNCELLENDİ: Kaydetme işlemine akıllı zamanlayıcı eklendi
   const saveSettingsToDatabase = async () => {
     if (!userId) {
       showToast("Oturum bilgisi bulunamadı. Lütfen tekrar giriş yapın.", "error");
       return;
     }
 
-    // Dil bilgisini doğrudan üst menünün kontrol ettiği ana sistemden (i18n) çekiyoruz
+    setIsLoading(true);
+    setLoadingMessage(t('saving', { defaultValue: 'Kaydediliyor...' }));
+
+    const wakeUpTimeout = setTimeout(() => {
+      setLoadingMessage(t('serverWakingUp', { defaultValue: 'Sunucu uykudan uyanıyor, bu işlem 30-40 saniye sürebilir. Lütfen bekleyin...' }));
+    }, 3000);
+
     const payload = {
       language: i18n.language,
       themeBg: selectedBg,
@@ -67,7 +76,6 @@ export default function Settings() {
       if (res.ok) {
         const updatedUserFromDb = await res.json();
         
-        // Başarılı olduğunda, yerel hafızadaki (Storage) kullanıcı bilgilerini de güncelliyoruz
         const storage = localStorage.getItem('fitassist_user') ? localStorage : sessionStorage;
         const currentUserData = JSON.parse(storage.getItem('fitassist_user') || '{}');
         
@@ -86,8 +94,16 @@ export default function Settings() {
     } catch (err) {
       console.error("Ayar kaydetme hatası:", err);
       showToast(t('serverError', 'Sunucu hatası!'), 'error');
+    } finally {
+      clearTimeout(wakeUpTimeout);
+      setIsLoading(false);
     }
   };
+
+  // EĞER İŞLEM SÜRÜYORSA LOADER BİLEŞENİNİ GÖSTER
+  if (isLoading) {
+    return <Loader message={loadingMessage} />;
+  }
 
   return (
     <div className="p-6 md:p-10 space-y-8 pb-32 md:pb-10 max-w-2xl mx-auto animate-in fade-in duration-500">
@@ -119,7 +135,6 @@ export default function Settings() {
                 }`}
               >
                 <div className="flex items-center gap-4">
-                  {/* Renk Önizleme Topları */}
                   <div className="flex -space-x-2">
                     <div className="w-8 h-8 rounded-full border-2 border-white shadow-sm" style={{ backgroundColor: palette.bg }}></div>
                     <div className="w-8 h-8 rounded-full border-2 border-white shadow-sm" style={{ backgroundColor: palette.primary }}></div>
@@ -138,17 +153,12 @@ export default function Settings() {
             <p className="text-sm font-extrabold opacity-70 mb-4">{t('customColors', 'Özel Renk Belirle')}</p>
             <div className="flex flex-col sm:flex-row gap-4">
               
-              {/* Arka Plan Rengi Seçici (Tüm Kutu Tıklanabilir) */}
               <div className="relative flex-1 bg-white/30 p-4 rounded-xl border border-white/50 flex items-center justify-between transition-all hover:bg-white/50 cursor-pointer active:scale-95 overflow-hidden group">
                 <span className="font-bold text-sm pointer-events-none">Arka Plan Rengi</span>
-                
-                {/* Sadece Rengi Gösteren Görsel Yuvarlak */}
                 <div 
                   className="w-10 h-10 rounded-full border-2 border-white shadow-sm pointer-events-none group-hover:scale-105 transition-transform" 
                   style={{ backgroundColor: selectedBg }}
                 ></div>
-                
-                {/* Görünmez ama Tıklanabilir Gerçek Renk Seçici */}
                 <input
                   type="color"
                   value={selectedBg}
@@ -157,17 +167,12 @@ export default function Settings() {
                 />
               </div>
 
-              {/* Vurgu Rengi Seçici (Tüm Kutu Tıklanabilir) */}
               <div className="relative flex-1 bg-white/30 p-4 rounded-xl border border-white/50 flex items-center justify-between transition-all hover:bg-white/50 cursor-pointer active:scale-95 overflow-hidden group">
                 <span className="font-bold text-sm pointer-events-none">Vurgu Rengi</span>
-                
-                {/* Sadece Rengi Gösteren Görsel Yuvarlak */}
                 <div 
                   className="w-10 h-10 rounded-full border-2 border-white shadow-sm pointer-events-none group-hover:scale-105 transition-transform" 
                   style={{ backgroundColor: selectedPrimary }}
                 ></div>
-                
-                {/* Görünmez ama Tıklanabilir Gerçek Renk Seçici */}
                 <input
                   type="color"
                   value={selectedPrimary}

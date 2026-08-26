@@ -3,9 +3,10 @@ import { LineChart as LineChartIcon, Plus, Trash2, Calendar as CalendarIcon } fr
 import { ThemeContext } from '../context/ThemeContext';
 import { useTranslation } from 'react-i18next';
 import { ToastContext } from '../context/ToastContext';
-// 1. ADIM: Özel pencere bileşenimizi (modal) içe aktarıyoruz
 import ConfirmModal from '../components/ConfirmModal';
 import { fetchWithAuth } from '../utils/api';
+// YENİ: Yükleme ekranı içe aktarıldı
+import { Loader } from '../components/Loader';
 
 // Gelen verinin yapısı
 interface ProgressRecord {
@@ -24,8 +25,11 @@ export default function Progress() {
   const [weight, setWeight] = useState<number | ''>('');
   const [date, setDate] = useState<string>(new Date().toISOString().split('T')[0]);
 
-  // 2. ADIM: Silinmek istenen kaydın ID'sini tutacak State
   const [deleteId, setDeleteId] = useState<number | null>(null);
+
+  // YENİ: Yükleme ekranı durumları
+  const [isLoading, setIsLoading] = useState(false);
+  const [loadingMessage, setLoadingMessage] = useState('');
 
   useEffect(() => {
     fetchWithAuthProgressData();
@@ -36,7 +40,6 @@ export default function Progress() {
       const res = await fetchWithAuth('https://fitassist-backend.onrender.com/api/progress/all');
       if (res.ok) {
         const data = await res.json();
-        // LİSTE İÇİN: Yeniden -> Eskiye. (Aynı günse son eklenen üstte kalsın)
         const sortedData = data.sort((a: ProgressRecord, b: ProgressRecord) => {
           const timeDiff = new Date(b.date).getTime() - new Date(a.date).getTime();
           if (timeDiff !== 0) return timeDiff;
@@ -49,11 +52,19 @@ export default function Progress() {
     }
   };
 
+  // GÜNCELLENDİ: Kilo kaydetme işlemine akıllı zamanlayıcı eklendi
   const handleSave = async () => {
     if (!weight || weight <= 0) {
       showToast(t('enterValue', 'Lütfen geçerli bir değer girin!'), 'error');
       return;
     }
+
+    setIsLoading(true);
+    setLoadingMessage(t('saving', { defaultValue: 'Kaydediliyor...' }));
+
+    const wakeUpTimeout = setTimeout(() => {
+      setLoadingMessage(t('serverWakingUp', { defaultValue: 'Sunucu uykudan uyanıyor, bu işlem 30-40 saniye sürebilir. Lütfen bekleyin...' }));
+    }, 3000);
 
     try {
       const res = await fetchWithAuth('https://fitassist-backend.onrender.com/api/progress/add', {
@@ -72,17 +83,26 @@ export default function Progress() {
     } catch (err) {
       console.error("Kilo eklenirken hata:", err);
       showToast(t('serverError', 'Sunucuya bağlanılamadı!'), 'error');
+    } finally {
+      clearTimeout(wakeUpTimeout);
+      setIsLoading(false);
     }
   };
 
-  // 3. ADIM: Çöp kutusuna basıldığında doğrudan silmek yerine Modal'ı açmak için ID'yi kaydet
   const handleDeleteRequest = (id: number) => {
     setDeleteId(id);
   };
 
-  // 4. ADIM: Modal'da "Tamam" butonuna basılınca çalışacak asıl silme fonksiyonu
+  // GÜNCELLENDİ: Silme işlemine akıllı zamanlayıcı eklendi
   const confirmDelete = async () => {
     if (deleteId === null) return;
+
+    setIsLoading(true);
+    setLoadingMessage(t('deleting', { defaultValue: 'Siliniyor...' }));
+
+    const wakeUpTimeout = setTimeout(() => {
+      setLoadingMessage(t('serverWakingUp', { defaultValue: 'Sunucu uykudan uyanıyor, bu işlem 30-40 saniye sürebilir. Lütfen bekleyin...' }));
+    }, 3000);
 
     try {
       const res = await fetchWithAuth(`https://fitassist-backend.onrender.com/api/progress/delete/${deleteId}`, {
@@ -99,21 +119,20 @@ export default function Progress() {
       console.error("Kilo kaydı silinirken hata:", err);
       showToast(t('serverError', 'Sunucu hatası!'), 'error');
     } finally {
-      // İşlem bitince (başarılı ya da başarısız) Modal'ı kapat
+      clearTimeout(wakeUpTimeout);
+      setIsLoading(false);
       setDeleteId(null);
     }
   };
 
   // --- GRAFİK HESAPLAMALARI ---
   
-  // 1. ZAMAN TÜNELİ: Eskiden -> Yeniye. (Aynı günse ilk eklenen solda kalsın)
   const chartData = [...progressData].sort((a, b) => {
     const timeDiff = new Date(a.date).getTime() - new Date(b.date).getTime();
     if (timeDiff !== 0) return timeDiff;
     return a.id - b.id;
   });
   
-  // 2. NEFES PAYI VE ORAN
   const weights = chartData.map(d => d.weight);
   const maxWeight = weights.length > 0 ? Math.max(...weights) : 100;
   const minWeight = weights.length > 0 ? Math.min(...weights) : 0;
@@ -124,12 +143,16 @@ export default function Progress() {
   const displayMax = maxWeight + buffer;
   const displayRange = displayMax - displayMin;
 
-  const paddingX = 10; // Kenar boşluğu (Yüzde olarak)
+  const paddingX = 10; 
+
+  // EĞER İŞLEM SÜRÜYORSA LOADER BİLEŞENİNİ GÖSTER
+  if (isLoading) {
+    return <Loader message={loadingMessage} />;
+  }
 
   return (
     <div className="p-6 md:p-10 space-y-6 pb-32 md:pb-10 max-w-5xl mx-auto animate-in fade-in duration-500 relative">
       
-      {/* YENİ: Uyarı Penceremiz. deleteId doluysa ekranda belirir */}
       <ConfirmModal 
         isOpen={deleteId !== null} 
         message={t('confirmDeleteProgress', 'Bu ölçüm kaydını silmek istediğinize emin misiniz?')} 
@@ -197,18 +220,14 @@ export default function Progress() {
             
             {chartData.length > 0 ? (
               <div className="w-full h-48 md:h-56 mb-8 relative border-b border-black/10 pb-4 pt-4">
-                
-                {/* viewBox TAMAMEN KALDIRILDI. Koordinatlar yüzdelik (%) olarak işleniyor */}
                 <svg className="w-full h-full overflow-visible">
                   
-                  {/* Arka plan referans çizgileri */}
                   <line x1="0%" y1="20%" x2="100%" y2="20%" stroke="currentColor" strokeWidth="1" className="opacity-20" strokeDasharray="4" />
                   <line x1="0%" y1="50%" x2="100%" y2="50%" stroke="currentColor" strokeWidth="1" className="opacity-20" strokeDasharray="4" />
                   <line x1="0%" y1="80%" x2="100%" y2="80%" stroke="currentColor" strokeWidth="1" className="opacity-20" strokeDasharray="4" />
                   
-                  {/* Dinamik Çizgi Grafiği (Segmentler halinde çiziliyor) */}
                   {chartData.map((d, i) => {
-                    if (i === chartData.length - 1) return null; // Son nokta ise çizgi çizilmez
+                    if (i === chartData.length - 1) return null; 
                     
                     const nextD = chartData[i + 1];
                     
@@ -231,13 +250,11 @@ export default function Progress() {
                     );
                   })}
                   
-                  {/* Kusursuz Geometrik Noktalar (Circles) ve Metinler */}
                   {chartData.map((d, i) => {
                     const x = chartData.length > 1 ? paddingX + (i / (chartData.length - 1)) * (100 - 2 * paddingX) : 50;
                     const y = 80 - (((d.weight - displayMin) / displayRange) * 60);
                     return (
                       <g key={`point-${i}`}>
-                        {/* r="6" tam olarak 6 piksel yarıçap demektir. Asla bozulmaz/esnemez. */}
                         <circle 
                           cx={`${x}%`} cy={`${y}%`} 
                           r="6" 
@@ -283,7 +300,7 @@ export default function Progress() {
                     </div>
                     
                     <button 
-                      onClick={() => handleDeleteRequest(record.id)} // DÜZELTME: Artık doğrudan silmek yerine pencereyi açıyor
+                      onClick={() => handleDeleteRequest(record.id)} 
                       className="p-3 bg-red-500/10 hover:bg-red-500/20 rounded-xl text-red-600 active:scale-90 transition-all"
                       title="Kaydı Sil"
                     >

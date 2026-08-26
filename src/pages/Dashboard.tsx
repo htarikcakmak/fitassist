@@ -4,6 +4,8 @@ import { Dumbbell, Utensils, Droplets, LineChart as LineChartIcon, Settings as S
 import { ThemeContext } from '../context/ThemeContext';
 import { useTranslation } from 'react-i18next'; 
 import { fetchWithAuth } from '../utils/api';
+// YENİ: Yükleme ekranı (Loader) içe aktarıldı
+import { Loader } from '../components/Loader';
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -17,13 +19,16 @@ export default function Dashboard() {
   const [sleepHours, setSleepHours] = useState<number | null>(null);
   const [workoutSets, setWorkoutSets] = useState(0);
 
+  // YENİ: Yükleme ekranı durumları (Sayfa açılır açılmaz veri çekileceği için varsayılan true yapıyoruz)
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadingMessage, setLoadingMessage] = useState('');
+
   const todayString = new Date().toISOString().split('T')[0];
   const todayFormatted = new Date().toLocaleDateString(i18n.language || 'tr', {
     weekday: 'long', day: 'numeric', month: 'long'
   });
 
   useEffect(() => {
-    // BURASI DÜZELTİLDİ: Artık hem kalıcı (local) hem de geçici (session) hafızaya bakıyoruz
     const storedUser = localStorage.getItem('fitassist_user') || sessionStorage.getItem('fitassist_user');
     
     if (storedUser) {
@@ -42,7 +47,16 @@ export default function Dashboard() {
     const savedWaterGoal = localStorage.getItem('dailyWaterGoal');
     const targetAmount = savedWaterGoal ? Number(savedWaterGoal) : 2500;
 
-    fetchWithAuth('https://fitassist-backend.onrender.com/api/nutrition/today')
+    // GÜNCELLENDİ: Sayfa yüklendiğinde akıllı zamanlayıcıyı başlatıyoruz
+    setIsLoading(true);
+    setLoadingMessage(t('loadingData', { defaultValue: 'Verileriniz yükleniyor...' }));
+
+    const wakeUpTimeout = setTimeout(() => {
+      setLoadingMessage(t('serverWakingUp', { defaultValue: 'Sunucu uykudan uyanıyor, bu işlem 30-40 saniye sürebilir. Lütfen bekleyin...' }));
+    }, 3000);
+
+    // 1. İstek: Beslenme
+    const nutritionPromise = fetchWithAuth('https://fitassist-backend.onrender.com/api/nutrition/today')
       .then(res => res.json())
       .then(data => {
         let cal = 0, p = 0, c = 0, f = 0;
@@ -55,7 +69,8 @@ export default function Dashboard() {
         setNutrition({ cal, p: Number(p.toFixed(1)), c: Number(c.toFixed(1)), f: Number(f.toFixed(1)) });
       }).catch(err => console.log("Beslenme verisi çekilemedi", err));
 
-    fetchWithAuth('https://fitassist-backend.onrender.com/api/water/all')
+    // 2. İstek: Su
+    const waterPromise = fetchWithAuth('https://fitassist-backend.onrender.com/api/water/all')
       .then(res => res.json())
       .then(data => {
         if (data && data.length > 0) {
@@ -68,20 +83,36 @@ export default function Dashboard() {
         }
       }).catch(err => console.log("Su verisi çekilemedi", err));
 
-    fetchWithAuth('https://fitassist-backend.onrender.com/api/workout/all')
+    // 3. İstek: Antrenman
+    const workoutPromise = fetchWithAuth('https://fitassist-backend.onrender.com/api/workout/all')
       .then(res => res.json())
       .then((data: any[]) => {
         const todayLogs = data.filter(log => log.date && log.date.startsWith(todayString));
         setWorkoutSets(todayLogs.length);
       }).catch(err => console.log("Antrenman verisi çekilemedi", err));
 
-    fetchWithAuth('https://fitassist-backend.onrender.com/api/sleep/all')
+    // 4. İstek: Uyku
+    const sleepPromise = fetchWithAuth('https://fitassist-backend.onrender.com/api/sleep/all')
       .then(res => res.json())
       .then((data: any[]) => {
         const todayLog = data.find(log => log.date && log.date.startsWith(todayString));
         if (todayLog) setSleepHours(todayLog.hours);
       }).catch(err => console.log("Uyku verisi çekilemedi", err));
-  }, [todayString]);
+
+    // YENİ: 4 İsteğin de BİTMESİNİ BEKLE! (Promise.all)
+    Promise.all([nutritionPromise, waterPromise, workoutPromise, sleepPromise])
+      .finally(() => {
+        // Hepsi bittiğinde kronometreyi durdur ve ekranı aç
+        clearTimeout(wakeUpTimeout);
+        setIsLoading(false);
+      });
+
+  }, [todayString, t]);
+
+  // EĞER VERİLER ÇEKİLİYORSA LOADER BİLEŞENİNİ GÖSTER
+  if (isLoading) {
+    return <Loader message={loadingMessage} />;
+  }
 
   return (
     <div className="px-6 md:p-10 mt-2 md:mt-6 space-y-4 md:space-y-6 animate-in fade-in duration-500 max-w-5xl mx-auto flex flex-col justify-start pb-32">
