@@ -163,7 +163,6 @@ const resources = {
       resetLinkSent: "Şifre sıfırlama bağlantısı gönderildi!",
       serverError: "Sunucuya bağlanılamadı!",
 
-      /* --- YENİ EKLENEN ÇEVİRİLER --- */
       areYouSure: "Emin misin?",
       confirm: "Tamam",
       cancel: "İptal",
@@ -184,7 +183,16 @@ const resources = {
       goalRecomposition: "Vücut Kompozisyonu",
       saveProfileBtn: "Profili Güncelle",
       backToLogin: "Giriş Ekranına Dön",
-      sendResetLink: "Bağlantı Gönder"
+      sendResetLink: "Bağlantı Gönder",
+
+      /* --- YENİ EKLENEN ÇEVİRİLER: ÖZEL BESİN EKLEME --- */
+      libraryTab: "Kütüphane",
+      customTab: "Kendin Ekle",
+      addCustomFoodTitle: "Kendi Besinini Oluştur",
+      addCustomFoodDesc: "Yediğin yemeğin değerlerini manuel gir.",
+      customFoodName: "Yemek Adı (*)",
+      customFoodPlaceholder: "Örn: Ev Yapımı Kek",
+      fillRequiredFields: "Lütfen isim ve kalori alanlarını doldurun!"
     }
   },
   en: {
@@ -350,7 +358,6 @@ const resources = {
       resetLinkSent: "Password reset link sent!",
       serverError: "Could not connect to server!",
 
-      /* --- YENİ EKLENEN ÇEVİRİLER --- */
       areYouSure: "Are you sure?",
       confirm: "Confirm",
       cancel: "Cancel",
@@ -371,7 +378,16 @@ const resources = {
       goalRecomposition: "Body Recomposition",
       saveProfileBtn: "Update Profile",
       backToLogin: "Back to Login",
-      sendResetLink: "Send Link"
+      sendResetLink: "Send Link",
+
+      /* --- YENİ EKLENEN ÇEVİRİLER: ÖZEL BESİN EKLEME --- */
+      libraryTab: "Library",
+      customTab: "Custom Entry",
+      addCustomFoodTitle: "Create Custom Food",
+      addCustomFoodDesc: "Enter your food's nutritional values manually.",
+      customFoodName: "Food Name (*)",
+      customFoodPlaceholder: "e.g., Homemade Cake",
+      fillRequiredFields: "Please fill in the name and calories fields!"
     }
   },
   es: {
@@ -535,7 +551,6 @@ const resources = {
       resetLinkSent: "¡Enlace de recuperación enviado!",
       serverError: "¡No se pudo conectar al servidor!",
 
-      /* --- YENİ EKLENEN ÇEVİRİLER --- */
       areYouSure: "¿Estás seguro?",
       confirm: "Confirmar",
       cancel: "Cancelar",
@@ -556,7 +571,16 @@ const resources = {
       goalRecomposition: "Recomposición Corporal",
       saveProfileBtn: "Actualizar Perfil",
       backToLogin: "Volver al Inicio",
-      sendResetLink: "Enviar Enlace"
+      sendResetLink: "Enviar Enlace",
+
+      /* --- YENİ EKLENEN ÇEVİRİLER: ÖZEL BESİN EKLEME --- */
+      libraryTab: "Biblioteca",
+      customTab: "Añadir Propio",
+      addCustomFoodTitle: "Crear Alimento Personalizado",
+      addCustomFoodDesc: "Ingresa manualmente los valores de tu comida.",
+      customFoodName: "Nombre de la Comida (*)",
+      customFoodPlaceholder: "ej., Pastel Casero",
+      fillRequiredFields: "¡Por favor completa los campos de nombre y calorías!"
     }
   },
   fr: {
@@ -720,7 +744,6 @@ const resources = {
       resetLinkSent: "Lien de réinitialisation envoyé !",
       serverError: "Impossible de se connecter au serveur !",
 
-      /* --- YENİ EKLENEN ÇEVİRİLER --- */
       areYouSure: "Êtes-vous sûr ?",
       confirm: "Confirmer",
       cancel: "Annuler",
@@ -741,7 +764,16 @@ const resources = {
       goalRecomposition: "Recomposition Corporelle",
       saveProfileBtn: "Mettre à jour le Profil",
       backToLogin: "Retour à la Connexion",
-      sendResetLink: "Envoyer le Lien"
+      sendResetLink: "Envoyer le Lien",
+
+      /* --- YENİ EKLENEN ÇEVİRİLER: ÖZEL BESİN EKLEME --- */
+      libraryTab: "Bibliothèque",
+      customTab: "Ajout Personnalisé",
+      addCustomFoodTitle: "Créer un Aliment Personnalisé",
+      addCustomFoodDesc: "Entrez manuellement les valeurs de votre repas.",
+      customFoodName: "Nom de l'Aliment (*)",
+      customFoodPlaceholder: "ex., Gâteau Maison",
+      fillRequiredFields: "Veuillez remplir les champs nom et calories !"
     }
   },
   it: {
@@ -905,7 +937,6 @@ const resources = {
       resetLinkSent: "Link di ripristino inviato!",
       serverError: "Impossibile connettersi al server!",
 
-      /* --- YENİ EKLENEN ÇEVİRİLER --- */
       areYouSure: "Sei sicuro?",
       confirm: "Conferma",
       cancel: "Annulla",
@@ -926,7 +957,16 @@ const resources = {
       goalRecomposition: "Ricomp. Corporea",
       saveProfileBtn: "Aggiorna Profilo",
       backToLogin: "Torna al Login",
-      sendResetLink: "Invia Link"
+      sendResetLink: "Invia Link",
+
+      /* --- YENİ EKLENEN ÇEVİRİLER: ÖZEL BESİN EKLEME --- */
+      libraryTab: "Biblioteca",
+      customTab: "Aggiungi Personalizzato",
+      addCustomFoodTitle: "Crea Alimento Personalizzato",
+      addCustomFoodDesc: "Inserisci manualmente i valori del tuo pasto.",
+      customFoodName: "Nome Alimento (*)",
+      customFoodPlaceholder: "es. Torta Fatta in Casa",
+      fillRequiredFields: "Compila i campi nome e calorie!"
     }
   },
   de: {
@@ -1090,7 +1130,6 @@ const resources = {
       resetLinkSent: "Link zum Zurücksetzen gesendet!",
       serverError: "Verbindung zum Server fehlgeschlagen!",
 
-      /* --- YENİ EKLENEN ÇEVİRİLER --- */
       areYouSure: "Bist du sicher?",
       confirm: "Bestätigen",
       cancel: "Abbrechen",
@@ -1111,7 +1150,16 @@ const resources = {
       goalRecomposition: "Körperrekomposition",
       saveProfileBtn: "Profil aktualisieren",
       backToLogin: "Zurück zum Login",
-      sendResetLink: "Link senden"
+      sendResetLink: "Link senden",
+
+      /* --- YENİ EKLENEN ÇEVİRİLER: ÖZEL BESİN EKLEME --- */
+      libraryTab: "Bibliothek",
+      customTab: "Eigener Eintrag",
+      addCustomFoodTitle: "Eigenes Lebensmittel erstellen",
+      addCustomFoodDesc: "Gib die Nährwerte deiner Mahlzeit manuell ein.",
+      customFoodName: "Lebensmittelname (*)",
+      customFoodPlaceholder: "z.B. Hausgemachter Kuchen",
+      fillRequiredFields: "Bitte fülle die Felder für Name und Kalorien aus!"
     }
   }
 };
