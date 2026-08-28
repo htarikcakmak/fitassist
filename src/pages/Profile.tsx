@@ -1,11 +1,14 @@
 import { useState, useContext, useRef, useEffect } from 'react';
-import { User, Mail, Lock, Camera, LogOut, ArrowRight, Ruler, Weight, Target, Save, Edit3, Calendar } from 'lucide-react';
+// YENİ: Trash2 (Çöp Kutusu) ikonu eklendi
+import { User, Mail, Lock, Camera, LogOut, ArrowRight, Ruler, Weight, Target, Save, Edit3, Calendar, Trash2 } from 'lucide-react';
 import { ThemeContext } from '../context/ThemeContext';
 import { useTranslation } from 'react-i18next';
 import { ToastContext } from '../context/ToastContext';
 import { fetchWithAuth } from '../utils/api';
 import { NavLink } from 'react-router-dom';
 import { Loader } from '../components/Loader';
+
+const DEFAULT_AVATAR = 'https://api.dicebear.com/7.x/avataaars/svg?seed=User&backgroundColor=transparent';
 
 export default function Profile() {
   const { themePrimary } = useContext(ThemeContext);
@@ -29,7 +32,7 @@ export default function Profile() {
   const [weight, setWeight] = useState('');
   const [age, setAge] = useState(''); 
   const [goal, setGoal] = useState('Vücut Kompozisyonu');
-  const [profilePic, setProfilePic] = useState('https://api.dicebear.com/7.x/avataaars/svg?seed=User&backgroundColor=transparent');
+  const [profilePic, setProfilePic] = useState(DEFAULT_AVATAR);
 
   const [tempEmail, setTempEmail] = useState('');
   const [tempName, setTempName] = useState('');
@@ -67,7 +70,6 @@ export default function Profile() {
     setIsLoading(true);
     setLoadingMessage(authMode === 'register' ? 'Kayıt oluşturuluyor...' : 'Giriş yapılıyor...');
 
-    // GÜNCELLENDİ: Akıllı Zamanlayıcı (Smart Timeout)
     const wakeUpTimeout = setTimeout(() => {
       setLoadingMessage(t('serverWakingUp', { defaultValue: 'Sunucu uykudan uyanıyor, bu işlem 30-40 saniye sürebilir. Lütfen bekleyin...' }));
     }, 3000);
@@ -129,7 +131,6 @@ export default function Profile() {
     setIsLoading(true);
     setLoadingMessage('Profil bilgileri kaydediliyor...');
     
-    // GÜNCELLENDİ: Akıllı Zamanlayıcı (Smart Timeout)
     const wakeUpTimeout = setTimeout(() => {
       setLoadingMessage(t('serverWakingUp', { defaultValue: 'Sunucu uykudan uyanıyor, bu işlem 30-40 saniye sürebilir. Lütfen bekleyin...' }));
     }, 3000);
@@ -192,6 +193,42 @@ export default function Profile() {
         setProfilePic(base64String);
       };
       reader.readAsDataURL(file);
+    }
+  };
+
+  // YENİ: Profil resmini kaldıran ve veritabanını güncelleyen fonksiyon
+  const handleRemoveProfilePicture = async (e: React.MouseEvent) => {
+    e.stopPropagation(); // Butona tıklayınca dosya seçme penceresinin açılmasını engeller
+    
+    setIsLoading(true);
+    setLoadingMessage('Profil resmi kaldırılıyor...');
+
+    try {
+      const response = await fetchWithAuth(`https://fitassist-backend.onrender.com/api/users/update/${userId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ imageUrl: DEFAULT_AVATAR }) // Sadece resmi gönderiyoruz (Akıllı Güncelleme koruyacak)
+      });
+
+      if (!response.ok) {
+        showToast("Resim kaldırılamadı! Lütfen tekrar deneyin.", "error");
+        return;
+      }
+
+      setProfilePic(DEFAULT_AVATAR);
+
+      // LocalStorage / SessionStorage Güncellemesi
+      const storage = localStorage.getItem('fitassist_user') ? localStorage : sessionStorage;
+      const currentUserData = JSON.parse(storage.getItem('fitassist_user') || '{}');
+      currentUserData.imageUrl = DEFAULT_AVATAR;
+      storage.setItem('fitassist_user', JSON.stringify(currentUserData));
+
+      showToast('Profil resmi başarıyla kaldırıldı!', 'success');
+    } catch (error) {
+      console.error("Resim kaldırma hatası:", error);
+      showToast("Sunucu ile bağlantı koptu!", "error");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -298,14 +335,29 @@ export default function Profile() {
         </div>
       ) : (
         <div className="w-full bg-white/40 backdrop-blur-xl rounded-[2.5rem] p-8 border border-white/60 shadow-[0_8px_30px_rgb(0,0,0,0.04)] flex flex-col items-center">
-          <div className="relative mb-6 group cursor-pointer" onClick={handleImageClick}>
-            <div className="w-32 h-32 rounded-full border-4 border-white shadow-lg overflow-hidden bg-white/50 relative">
-              <img src={profilePic} alt="Profil" className="w-full h-full object-cover" />
-              <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300">
-                <Camera size={28} color="white" />
+          
+          {/* GÜNCELLENDİ: Profil Resmi ve Çöp Kutusu Konteynırı */}
+          <div className="relative mb-6 inline-block">
+            <div className="group cursor-pointer" onClick={handleImageClick}>
+              <div className="w-32 h-32 rounded-full border-4 border-white shadow-lg overflow-hidden bg-white/50 relative">
+                <img src={profilePic} alt="Profil" className="w-full h-full object-cover" />
+                <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300">
+                  <Camera size={28} color="white" />
+                </div>
               </div>
+              <input type="file" accept="image/*" ref={fileInputRef} onChange={handleImageChange} className="hidden" />
             </div>
-            <input type="file" accept="image/*" ref={fileInputRef} onChange={handleImageChange} className="hidden" />
+
+            {/* Sadece kullanıcının özel bir resmi varsa Silme Butonu görünür */}
+            {profilePic !== DEFAULT_AVATAR && (
+              <button
+                onClick={handleRemoveProfilePicture}
+                className="absolute bottom-0 right-0 bg-red-500 text-white p-2.5 rounded-full shadow-lg border-2 border-white hover:bg-red-600 hover:scale-110 active:scale-95 transition-all z-10"
+                title={t('removePicture', 'Resmi Kaldır')}
+              >
+                <Trash2 size={16} strokeWidth={2.5} />
+              </button>
+            )}
           </div>
 
           {!isEditing ? (

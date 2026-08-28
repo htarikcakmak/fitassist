@@ -4,8 +4,20 @@ import { ThemeContext } from '../context/ThemeContext';
 import { ToastContext } from '../context/ToastContext';
 import { useTranslation } from 'react-i18next';
 import { fetchWithAuth } from '../utils/api';
-// YENİ: Yükleme ekranı içe aktarıldı
 import { Loader } from '../components/Loader';
+
+const PREMIUM_BG_COLORS = [
+  '#d8c97f', '#1a1a1a', '#e0fbfc', '#ffdab9', 
+  '#f3f4f6', '#0f172a', '#fdfbf7', '#2d3748'
+];
+
+const PREMIUM_PRIMARY_COLORS = [
+  '#6a9433', '#e63946', '#1d3557', '#4a0e4e', 
+  '#8b5cf6', '#3b82f6', '#f97316', '#10b981'
+];
+
+const isDarkColor = (color: string) => 
+  ['#1a1a1a', '#0f172a', '#2d3748', '#e63946', '#1d3557', '#4a0e4e', '#8b5cf6', '#3b82f6', '#6a9433', '#10b981', '#f97316'].includes(color);
 
 export default function Settings() {
   const { themeBg, themePrimary, setTheme } = useContext(ThemeContext);
@@ -17,7 +29,6 @@ export default function Settings() {
   const [selectedBg, setSelectedBg] = useState(themeBg);
   const [selectedPrimary, setSelectedPrimary] = useState(themePrimary);
 
-  // YENİ: Yükleme ekranı durumları
   const [isLoading, setIsLoading] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState('');
 
@@ -44,7 +55,6 @@ export default function Settings() {
     setTheme(bg, primary); 
   };
 
-  // GÜNCELLENDİ: Kaydetme işlemine akıllı zamanlayıcı eklendi
   const saveSettingsToDatabase = async () => {
     if (!userId) {
       showToast("Oturum bilgisi bulunamadı. Lütfen tekrar giriş yapın.", "error");
@@ -58,13 +68,18 @@ export default function Settings() {
       setLoadingMessage(t('serverWakingUp', { defaultValue: 'Sunucu uykudan uyanıyor, bu işlem 30-40 saniye sürebilir. Lütfen bekleyin...' }));
     }, 3000);
 
+    const storage = localStorage.getItem('fitassist_user') ? localStorage : sessionStorage;
+    const currentUserData = JSON.parse(storage.getItem('fitassist_user') || '{}');
+
     const payload = {
+      ...currentUserData,
       language: i18n.language,
       themeBg: selectedBg,
       themePrimary: selectedPrimary
     };
 
     try {
+      // DÜZELTİLDİ: Adres canlı sunucuya (Render) çevrildi. Artık APK olarak çalışmaya hazır!
       const res = await fetchWithAuth(`https://fitassist-backend.onrender.com/api/users/update/${userId}`, {
         method: 'PUT',
         headers: {
@@ -75,9 +90,6 @@ export default function Settings() {
 
       if (res.ok) {
         const updatedUserFromDb = await res.json();
-        
-        const storage = localStorage.getItem('fitassist_user') ? localStorage : sessionStorage;
-        const currentUserData = JSON.parse(storage.getItem('fitassist_user') || '{}');
         
         const newStorageData = {
           ...currentUserData,
@@ -100,7 +112,6 @@ export default function Settings() {
     }
   };
 
-  // EĞER İŞLEM SÜRÜYORSA LOADER BİLEŞENİNİ GÖSTER
   if (isLoading) {
     return <Loader message={loadingMessage} />;
   }
@@ -108,13 +119,11 @@ export default function Settings() {
   return (
     <div className="p-6 md:p-10 space-y-8 pb-32 md:pb-10 max-w-2xl mx-auto animate-in fade-in duration-500">
       
-      {/* BAŞLIK */}
       <div className="text-center md:text-left">
         <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight mb-1">{t('settingsTitle', 'Genel Ayarlar')}</h1>
         <p className="font-extrabold opacity-80">{t('settingsDesc', 'Uygulamanın görünümünü özelleştir.')}</p>
       </div>
 
-      {/* TEMA SEÇİM PANELİ */}
       <div className="bg-white/40 backdrop-blur-xl rounded-[2rem] p-6 shadow-sm border border-white/60">
         <div className="flex items-center gap-3 mb-6">
           <Palette size={24} strokeWidth={2.5} style={{ color: themePrimary }} />
@@ -148,37 +157,55 @@ export default function Settings() {
             ))}
           </div>
           
-          {/* ÖZEL RENK SEÇİMİ */}
           <div className="pt-6 mt-4 border-t border-white/40">
             <p className="text-sm font-extrabold opacity-70 mb-4">{t('customColors', 'Özel Renk Belirle')}</p>
-            <div className="flex flex-col sm:flex-row gap-4">
+            
+            <div className="space-y-6">
               
-              <div className="relative flex-1 bg-white/30 p-4 rounded-xl border border-white/50 flex items-center justify-between transition-all hover:bg-white/50 cursor-pointer active:scale-95 overflow-hidden group">
-                <span className="font-bold text-sm pointer-events-none">Arka Plan Rengi</span>
-                <div 
-                  className="w-10 h-10 rounded-full border-2 border-white shadow-sm pointer-events-none group-hover:scale-105 transition-transform" 
-                  style={{ backgroundColor: selectedBg }}
-                ></div>
-                <input
-                  type="color"
-                  value={selectedBg}
-                  onChange={(e) => handlePreviewTheme(e.target.value, selectedPrimary)}
-                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                />
+              <div className="bg-white/30 p-4 rounded-xl border border-white/50">
+                <span className="font-bold text-sm mb-3 block opacity-80">Arka Plan Rengi</span>
+                <div className="flex flex-wrap gap-3">
+                  {PREMIUM_BG_COLORS.map((color) => (
+                    <button
+                      key={color}
+                      onClick={() => handlePreviewTheme(color, selectedPrimary)}
+                      className={`relative w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-300 shadow-sm border-2
+                        ${selectedBg === color 
+                          ? 'border-white scale-110 ring-2 ring-white/60' 
+                          : 'border-white/20 hover:scale-105 active:scale-95'
+                        }
+                      `}
+                      style={{ backgroundColor: color }}
+                    >
+                      {selectedBg === color && (
+                        <Check size={20} color={isDarkColor(color) ? '#ffffff' : '#1f2937'} strokeWidth={3} className="animate-in zoom-in duration-200" />
+                      )}
+                    </button>
+                  ))}
+                </div>
               </div>
 
-              <div className="relative flex-1 bg-white/30 p-4 rounded-xl border border-white/50 flex items-center justify-between transition-all hover:bg-white/50 cursor-pointer active:scale-95 overflow-hidden group">
-                <span className="font-bold text-sm pointer-events-none">Vurgu Rengi</span>
-                <div 
-                  className="w-10 h-10 rounded-full border-2 border-white shadow-sm pointer-events-none group-hover:scale-105 transition-transform" 
-                  style={{ backgroundColor: selectedPrimary }}
-                ></div>
-                <input
-                  type="color"
-                  value={selectedPrimary}
-                  onChange={(e) => handlePreviewTheme(selectedBg, e.target.value)}
-                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                />
+              <div className="bg-white/30 p-4 rounded-xl border border-white/50">
+                <span className="font-bold text-sm mb-3 block opacity-80">Vurgu Rengi</span>
+                <div className="flex flex-wrap gap-3">
+                  {PREMIUM_PRIMARY_COLORS.map((color) => (
+                    <button
+                      key={color}
+                      onClick={() => handlePreviewTheme(selectedBg, color)}
+                      className={`relative w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-300 shadow-sm border-2
+                        ${selectedPrimary === color 
+                          ? 'border-white scale-110 ring-2 ring-white/60' 
+                          : 'border-white/20 hover:scale-105 active:scale-95'
+                        }
+                      `}
+                      style={{ backgroundColor: color }}
+                    >
+                      {selectedPrimary === color && (
+                        <Check size={20} color={isDarkColor(color) ? '#ffffff' : '#1f2937'} strokeWidth={3} className="animate-in zoom-in duration-200" />
+                      )}
+                    </button>
+                  ))}
+                </div>
               </div>
 
             </div>
@@ -187,7 +214,6 @@ export default function Settings() {
         </div>
       </div>
 
-      {/* KALICI KAYDETME BUTONU */}
       <div className="flex justify-end pt-2">
         <button 
           onClick={saveSettingsToDatabase}
