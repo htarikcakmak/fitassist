@@ -92,7 +92,23 @@ export default function Profile() {
         return;
       }
 
-      const userData = await response.json(); 
+      let userData;
+      if (authMode === 'register') {
+         // Kayıt başarılı, token almak için arka planda login ol
+         const loginRes = await fetchWithAuth('https://fitassist-backend.onrender.com/api/users/login', {
+           method: 'POST',
+           headers: { 'Content-Type': 'application/json' },
+           body: JSON.stringify({ email: tempEmail, password: tempPassword })
+         });
+         if (!loginRes.ok) {
+             showToast('Kayıt başarılı ancak giriş yapılamadı.', 'error');
+             return;
+         }
+         userData = await loginRes.json();
+      } else {
+         userData = await response.json(); 
+      }
+
       setUserId(userData.id);
       setName(userData.name || '');
       setEmail(userData.email || '');
