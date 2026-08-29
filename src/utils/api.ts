@@ -10,7 +10,7 @@ export const fetchWithAuth = async (endpoint: string, options: RequestInit = {})
     token = user.token || ''; 
   }
 
-  // YENİ EKLENEN KISIM: 415 ve 400 hatalarını önlemek için Content-Type eklendi.
+  // 415 ve 400 hatalarını önlemek için Content-Type eklendi.
   const headers = {
     'Content-Type': 'application/json', // Sunucuya verinin JSON olduğunu söyler
     'Authorization': 'Bearer ' + token,
@@ -25,9 +25,16 @@ export const fetchWithAuth = async (endpoint: string, options: RequestInit = {})
     headers
   });
 
-  // Eğer yetkisiz (401) ise sadece Hata fırlat (Böylece Dashboard'da forEach hatası çıkmaz), 
-  // ama KESİNLİKLE Yönlendirme (redirect) YAPMA (Kullanıcı istemedi).
+  // Eğer token gerçekten sunucu tarafından reddedildiyse (Eski token vs.), oturumu temizleyip logine yollamalıyız.
+  // Önceden sürekli logine atma sebebi backend'in anahtar unutmasıydı, artık düzeldiği için bu sadece GERÇEK hatalarda çalışacak.
   if (response.status === 401) {
+    localStorage.removeItem('fitassist_user');
+    sessionStorage.removeItem('fitassist_user');
+    
+    // Kullanıcıya bilgi ver ki neden atıldığını anlasın
+    alert('Oturum süreniz doldu veya eski bir token tespit edildi. Lütfen tekrar giriş yapın.');
+    window.location.href = '/profile';
+    
     throw new Error('Yetkisiz işlem: Token geçersiz veya süresi dolmuş.');
   }
 
