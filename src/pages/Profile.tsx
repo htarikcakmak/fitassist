@@ -43,15 +43,20 @@ export default function Profile() {
     
     if (storedUser) {
       const user = JSON.parse(storedUser);
-      setUserId(user.id);
-      setName(user.name || '');
-      setEmail(user.email || '');
-      setHeight(user.height || '');
-      setWeight(user.weight || '');
-      setAge(user.age || ''); 
-      setGoal(user.goal || 'Vücut Kompozisyonu');
-      if (user.imageUrl) setProfilePic(user.imageUrl);
-      setIsLoggedIn(true);
+      if (user.token && user.id) {
+        setUserId(user.id);
+        setName(user.name || '');
+        setEmail(user.email || '');
+        setHeight(user.height || '');
+        setWeight(user.weight || '');
+        setAge(user.age || ''); 
+        setGoal(user.goal || 'Vücut Kompozisyonu');
+        if (user.imageUrl) setProfilePic(user.imageUrl);
+        setIsLoggedIn(true);
+      } else {
+        localStorage.removeItem('fitassist_user');
+        sessionStorage.removeItem('fitassist_user');
+      }
     }
   }, []);
 

@@ -240,14 +240,16 @@ export default function App() {
     if (storedUser) {
       const user = JSON.parse(storedUser);
       
-      // Kullanıcının kayıtlı teması varsa sistemi güncelle
-      if (user.themeBg && user.themePrimary) {
-        updateTheme(user.themeBg, user.themePrimary);
-      }
-      
-      // Kullanıcının kayıtlı dili varsa çeviri sistemini güncelle
-      if (user.language) {
-        i18n.changeLanguage(user.language);
+      if (user.token && user.id) {
+        // Kullanıcının kayıtlı teması varsa sistemi güncelle
+        if (user.themeBg && user.themePrimary) {
+          updateTheme(user.themeBg, user.themePrimary);
+        }
+        
+        // Kullanıcının kayıtlı dili varsa çeviri sistemini güncelle
+        if (user.language) {
+          i18n.changeLanguage(user.language);
+        }
       }
     }
   }, [i18n]);

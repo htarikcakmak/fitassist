@@ -10,7 +10,7 @@ export const fetchWithAuth = async (endpoint: string, options: RequestInit = {})
     token = user.token || ''; 
   }
 
-  // YENİ EKLENEN KISIM: 415 ve 400 hatalarını önlemek için Content-Type eklendi.
+  // 415 ve 400 hatalarını önlemek için Content-Type eklendi.
   const headers = {
     'Content-Type': 'application/json', // Sunucuya verinin JSON olduğunu söyler
     'Authorization': 'Bearer ' + token,
@@ -24,24 +24,6 @@ export const fetchWithAuth = async (endpoint: string, options: RequestInit = {})
     ...options,
     headers
   });
-
-  // YENİ EKLENEN KISIM: Eğer 401 hatası gelirse kullanıcıyı logine at
-  if (response.status === 401) {
-    const currentUser = localStorage.getItem('fitassist_user') || sessionStorage.getItem('fitassist_user');
-    
-    localStorage.removeItem('fitassist_user');
-    sessionStorage.removeItem('fitassist_user');
-    
-    if (currentUser) {
-      if (window.location.pathname === '/profile') {
-        window.location.reload();
-      } else {
-        window.location.href = '/profile';
-      }
-    }
-    
-    throw new Error('Yetkisiz işlem veya süresi dolmuş oturum.');
-  }
 
   return response;
 };
