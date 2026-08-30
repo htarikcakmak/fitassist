@@ -263,7 +263,7 @@ export default function Nutrition() {
                         <div className="w-8 shrink-0"></div>
                         
                         <span className="text-sm font-extrabold text-center flex-1 leading-snug self-center">
-                          {food.name}
+                          {t(`food_${food.id}`, { defaultValue: food.name })}
                         </span>
                         
                         <button 
