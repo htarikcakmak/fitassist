@@ -92,13 +92,13 @@ function Layout() {
     if (storedUser) {
       const user = JSON.parse(storedUser);
       
-      // 3. Yerel hafızadaki dil ayarını güncelle
+      // 3. Yerel hafızadaki dil ayarını güncelle (tema renklerini de koru)
       user.language = code;
       storage.setItem('fitassist_user', JSON.stringify(user));
 
       // 4. Arka plana (Veritabanına) yeni dili kaydetmek için istek at
       try {
-        await fetchWithAuth(`https://fitassist-backend.onrender.com/api/users/update/${user.id}`, {
+        const res = await fetchWithAuth(`https://fitassist-backend.onrender.com/api/users/update/${user.id}`, {
           method: 'PUT',
           body: JSON.stringify({
             language: code,
@@ -106,6 +106,18 @@ function Layout() {
             themePrimary: user.themePrimary
           })
         });
+
+        // Backend'den dönen cevabı localStorage'a kaydet (token ve mevcut verileri koru)
+        if (res.ok) {
+          const updatedUser = await res.json();
+          const mergedData = {
+            ...user,               // Mevcut token, id vs. korunsun
+            language: updatedUser.language || code,
+            themeBg: updatedUser.themeBg || user.themeBg,
+            themePrimary: updatedUser.themePrimary || user.themePrimary
+          };
+          storage.setItem('fitassist_user', JSON.stringify(mergedData));
+        }
       } catch (error) {
         console.error("Dil değişikliği veritabanına kaydedilemedi:", error);
       }
