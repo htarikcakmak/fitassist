@@ -1,5 +1,11 @@
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
+import trFoods from './locales/tr.json';
+import enFoods from './locales/en.json';
+import esFoods from './locales/es.json';
+import frFoods from './locales/fr.json';
+import itFoods from './locales/it.json';
+import deFoods from './locales/de.json';
 
 const resources = {
   tr: {
@@ -1163,6 +1169,15 @@ const resources = {
     }
   }
 };
+
+// Merge food translations without TypeScript duplicate key errors
+Object.assign(resources.tr.translation, trFoods);
+Object.assign(resources.en.translation, enFoods);
+Object.assign(resources.es.translation, esFoods);
+Object.assign(resources.fr.translation, frFoods);
+Object.assign(resources.it.translation, itFoods);
+Object.assign(resources.de.translation, deFoods);
+
 
 i18n
   .use(initReactI18next)
