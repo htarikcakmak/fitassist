@@ -7,6 +7,7 @@ import { useTranslation } from 'react-i18next';
 import { ToastContext } from '../context/ToastContext';
 import { fetchWithAuth } from '../utils/api';
 import { Loader } from '../components/Loader';
+import { calculateMacros } from '../utils/macroCalculator';
 
 type MealsState = { [key: string]: FoodItem[] };
 
@@ -25,9 +26,27 @@ export default function Nutrition() {
   const [modalTab, setModalTab] = useState<'library' | 'custom'>('library');
   const [customFood, setCustomFood] = useState({ name: '', cal: '', p: '', c: '', f: '' });
 
+  const [userProfile, setUserProfile] = useState<{weight: number, height: number, age: number, gender: string, goal: string} | null>(null);
+
   const { themeBg, themePrimary } = useContext(ThemeContext);
   const { t, i18n } = useTranslation();
   const { showToast } = useContext(ToastContext);
+
+  useEffect(() => {
+    const storage = localStorage.getItem('fitassist_user') ? localStorage : sessionStorage;
+    const userData = JSON.parse(storage.getItem('fitassist_user') || '{}');
+    if (userData.weight && userData.height && userData.age) {
+      setUserProfile({
+        weight: userData.weight,
+        height: userData.height,
+        age: userData.age,
+        gender: userData.gender || 'male',
+        goal: userData.goal || 'Vücut Kompozisyonu'
+      });
+    }
+  }, []);
+
+  const macroGoals = userProfile ? calculateMacros(userProfile.weight, userProfile.height, userProfile.age, userProfile.gender, userProfile.goal) : null;
 
   const todayMacros = { p: 0, c: 0, f: 0 };
   Object.values(meals).forEach(mealFoods => {
@@ -295,9 +314,36 @@ export default function Nutrition() {
         })}
       </div>
 
-      <div className="w-full bg-white/40 backdrop-blur-xl rounded-[2rem] p-6 md:p-8 border border-white/60 shadow-[0_8px_30px_rgb(0,0,0,0.04)] mt-6">
-        
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+        <div className="w-full bg-white/40 backdrop-blur-xl rounded-[2rem] p-6 md:p-8 border border-white/60 shadow-[0_8px_30px_rgb(0,0,0,0.04)] mt-6">
+          
+          {macroGoals && (
+            <div className="mb-8 p-4 bg-white/50 rounded-2xl border border-white/80 animate-in fade-in slide-in-from-bottom-4">
+               <div className="flex justify-between items-center mb-2">
+                 <span className="font-extrabold">{t('calories', 'Kalori')}</span>
+                 <span className="font-black">{totalCalories} / {macroGoals.targetCalories} kcal</span>
+               </div>
+               <div className="w-full bg-white/60 rounded-full h-4 mb-6 overflow-hidden shadow-inner">
+                 <div className="bg-emerald-500 h-4 rounded-full transition-all duration-1000" style={{width: `${Math.min((totalCalories/macroGoals.targetCalories)*100, 100)}%`}}></div>
+               </div>
+
+               <div className="grid grid-cols-3 gap-4">
+                 <div>
+                   <div className="flex justify-between text-xs font-bold mb-1 opacity-80"><span>{t('proteinShort', 'P')}</span> <span>{totalP} / {macroGoals.targetProtein}g</span></div>
+                   <div className="w-full bg-white/60 rounded-full h-2 shadow-inner"><div className="bg-blue-500 h-2 rounded-full transition-all duration-1000" style={{width: `${Math.min((totalP/macroGoals.targetProtein)*100, 100)}%`}}></div></div>
+                 </div>
+                 <div>
+                   <div className="flex justify-between text-xs font-bold mb-1 opacity-80"><span>{t('carbsShort', 'C')}</span> <span>{totalC} / {macroGoals.targetCarbs}g</span></div>
+                   <div className="w-full bg-white/60 rounded-full h-2 shadow-inner"><div className="bg-amber-700 h-2 rounded-full transition-all duration-1000" style={{width: `${Math.min((totalC/macroGoals.targetCarbs)*100, 100)}%`}}></div></div>
+                 </div>
+                 <div>
+                   <div className="flex justify-between text-xs font-bold mb-1 opacity-80"><span>{t('fatShort', 'F')}</span> <span>{totalF} / {macroGoals.targetFat}g</span></div>
+                   <div className="w-full bg-white/60 rounded-full h-2 shadow-inner"><div className="bg-yellow-400 h-2 rounded-full transition-all duration-1000" style={{width: `${Math.min((totalF/macroGoals.targetFat)*100, 100)}%`}}></div></div>
+                 </div>
+               </div>
+            </div>
+          )}
+
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
           <div className="flex items-center gap-3">
             <div className="bg-white/50 p-2 rounded-xl">
               <Utensils size={24} strokeWidth={2.5} color={themePrimary} />

@@ -32,6 +32,7 @@ export default function Profile() {
   const [weight, setWeight] = useState('');
   const [age, setAge] = useState(''); 
   const [goal, setGoal] = useState('Vücut Kompozisyonu');
+  const [gender, setGender] = useState('male');
   const [profilePic, setProfilePic] = useState(DEFAULT_AVATAR);
 
   const [tempEmail, setTempEmail] = useState('');
@@ -51,6 +52,7 @@ export default function Profile() {
         setWeight(user.weight || '');
         setAge(user.age || ''); 
         setGoal(user.goal || 'Vücut Kompozisyonu');
+        setGender(user.gender || 'male');
         if (user.imageUrl) setProfilePic(user.imageUrl);
         setIsLoggedIn(true);
       } else {
@@ -121,6 +123,7 @@ export default function Profile() {
       setWeight(userData.weight || '');
       setAge(userData.age || '');
       setGoal(userData.goal || 'Vücut Kompozisyonu');
+      setGender(userData.gender || 'male');
       if (userData.imageUrl) setProfilePic(userData.imageUrl);
 
       setIsLoggedIn(true);
@@ -164,6 +167,7 @@ export default function Profile() {
       weight: weight ? Number(weight) : null, 
       age: age ? Number(age) : null, 
       goal: goal, 
+      gender: gender,
       imageUrl: profilePic 
     };
 
@@ -443,6 +447,17 @@ export default function Profile() {
                     <Calendar size={16} className="absolute left-3 top-1/2 -translate-y-1/2 opacity-50" color={themePrimary} />
                     <input type="number" value={age} onChange={(e) => setAge(e.target.value)} className="w-full bg-white/60 border border-white/80 rounded-2xl pl-9 pr-2 py-3 font-bold focus:outline-none focus:ring-2 transition-all shadow-inner" style={{ '--tw-ring-color': themePrimary } as React.CSSProperties} />
                   </div>
+                </div>
+              </div>
+
+              <div className="space-y-1 text-left">
+                <label className="text-xs font-extrabold opacity-70 ml-1">{t('genderLabel', 'Cinsiyet')}</label>
+                <div className="relative">
+                  <User size={18} className="absolute left-4 top-1/2 -translate-y-1/2 opacity-50" color={themePrimary} />
+                  <select value={gender} onChange={(e) => setGender(e.target.value)} className="w-full bg-white/60 border border-white/80 rounded-2xl pl-11 pr-4 py-3 font-bold focus:outline-none focus:ring-2 transition-all shadow-inner appearance-none">
+                    <option value="male">{t('male', 'Erkek')}</option>
+                    <option value="female">{t('female', 'Kadın')}</option>
+                  </select>
                 </div>
               </div>
 

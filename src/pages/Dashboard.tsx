@@ -4,15 +4,15 @@ import { Dumbbell, Utensils, Droplets, LineChart as LineChartIcon, Settings as S
 import { ThemeContext } from '../context/ThemeContext';
 import { useTranslation } from 'react-i18next'; 
 import { fetchWithAuth } from '../utils/api';
-// YENİ: Yükleme ekranı (Loader) içe aktarıldı
 import { Loader } from '../components/Loader';
+import { calculateMacros } from '../utils/macroCalculator';
 
 export default function Dashboard() {
   const navigate = useNavigate();
   const { themePrimary } = useContext(ThemeContext);
   const { t, i18n } = useTranslation();
 
-  const [profileData, setProfileData] = useState<{name: string, age: number, height: number, weight: number, imageUrl: string} | null>(null);
+  const [profileData, setProfileData] = useState<{name: string, age: number, height: number, weight: number, imageUrl: string, gender: string, goal: string} | null>(null);
 
   const [nutrition, setNutrition] = useState({ cal: 0, p: 0, c: 0, f: 0 });
   const [water, setWater] = useState({ consumed: 0, target: 2500 });
@@ -38,6 +38,8 @@ export default function Dashboard() {
         age: user.age || 0, 
         height: user.height || 0,
         weight: user.weight || 0,
+        gender: user.gender || 'male',
+        goal: user.goal || 'Vücut Kompozisyonu',
         imageUrl: user.imageUrl || 'https://api.dicebear.com/7.x/avataaars/svg?seed=User&backgroundColor=transparent'
       });
     } else {
@@ -114,6 +116,11 @@ export default function Dashboard() {
     return <Loader message={loadingMessage} />;
   }
 
+  // Calculate macros if profile exists
+  const macroGoals = (profileData && profileData.weight && profileData.height && profileData.age) 
+    ? calculateMacros(profileData.weight, profileData.height, profileData.age, profileData.gender, profileData.goal)
+    : null;
+
   return (
     <div className="px-6 md:p-10 mt-2 md:mt-6 space-y-4 md:space-y-6 animate-in fade-in duration-500 max-w-5xl mx-auto flex flex-col justify-start pb-32">
       
@@ -179,21 +186,23 @@ export default function Dashboard() {
           <div className="bg-white/50 p-3 rounded-2xl shrink-0"><Utensils size={24} strokeWidth={2.5} color={themePrimary} /></div>
           <div>
             <h2 className="text-lg font-extrabold tracking-tight">{t('dashboardNutritionTitle', 'Beslenme Özetin')}</h2>
-            <p className="text-xs font-bold opacity-70">{nutrition.cal} kcal {t('consumed', 'alındı')}</p>
+            <p className="text-xs font-bold opacity-70">
+              {nutrition.cal} {macroGoals ? `/ ${macroGoals.targetCalories}` : ''} kcal {t('consumed', 'alındı')}
+            </p>
           </div>
         </div>
         <div className="flex justify-between items-center bg-white/40 p-4 rounded-2xl border border-white/50">
           <div className="text-center w-1/3 border-r border-white/40">
             <p className="text-[10px] font-bold opacity-70 uppercase mb-1">{t('protein', 'Protein')}</p>
-            <p className="font-black">{nutrition.p}g</p>
+            <p className="font-black text-sm">{nutrition.p}{macroGoals ? ` / ${macroGoals.targetProtein}` : ''}g</p>
           </div>
           <div className="text-center w-1/3 border-r border-white/40">
             <p className="text-[10px] font-bold opacity-70 uppercase mb-1">{t('carbs', 'Karb')}</p>
-            <p className="font-black">{nutrition.c}g</p>
+            <p className="font-black text-sm">{nutrition.c}{macroGoals ? ` / ${macroGoals.targetCarbs}` : ''}g</p>
           </div>
           <div className="text-center w-1/3">
             <p className="text-[10px] font-bold opacity-70 uppercase mb-1">{t('fat', 'Yağ')}</p>
-            <p className="font-black">{nutrition.f}g</p>
+            <p className="font-black text-sm">{nutrition.f}{macroGoals ? ` / ${macroGoals.targetFat}` : ''}g</p>
           </div>
         </div>
       </div>
