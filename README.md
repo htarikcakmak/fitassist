@@ -1,6 +1,6 @@
 <div align="center">
-  <img src="https://raw.githubusercontent.com/lucide-icons/lucide/main/icons/dumbbell.svg" width="80" alt="FitAssist Logo"/>
-  <h1>FitAssist 🏋️‍♂️</h1>
+  <img width="153" height="157" alt="ChatGPT Image Sep 2, 2026, 08_19_34 PM" src="https://github.com/user-attachments/assets/ca85f43f-c1a5-43d2-b98a-931e3862674b" />
+  <h1>FitAssist</h1>
   <p>Modern, kapsamlı ve çok dilli Full-Stack Fitness ve Sağlık Takip Uygulaması</p>
 
   <p>
