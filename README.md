@@ -52,9 +52,9 @@
 ## 📸 Ekran Görüntüleri
 
 
-| Dashboard | Beslenme | Profil |
+| Dashboard | Beslenme | Antrenman |
 | :---: | :---: | :---: |
-| <img src="https://via.placeholder.com/250x500.png?text=Dashboard" width="200"/> | <img src="https://via.placeholder.com/250x500.png?text=Nutrition" width="200"/> | <img src="https://via.placeholder.com/250x500.png?text=Profile" width="200"/> |
+| <img width="100" height="205" alt="WhatsApp Image 2026-09-02 at 12 04 03 (6)" src="https://github.com/user-attachments/assets/2ea9a267-5556-46ec-8c2d-fba5e6847d74" /> | <img width="100" height="205" alt="WhatsApp Image 2026-09-02 at 12 04 03 (3)" src="https://github.com/user-attachments/assets/435244da-38e1-4da1-92a1-25c8c134997b" /> | <img width="100" height="205" alt="WhatsApp Image 2026-09-02 at 12 04 03 (4)" src="https://github.com/user-attachments/assets/f53525d9-b3a5-4f80-accd-4a1241d08242" />|
 
 ## 💻 Kurulum ve Çalıştırma
 
