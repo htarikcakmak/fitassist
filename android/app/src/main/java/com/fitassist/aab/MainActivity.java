@@ -1,4 +1,4 @@
-package com.fitassist.app;
+package com.fitassist.aab;
 
 import com.getcapacitor.BridgeActivity;
 

@@ -22,3 +22,13 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Güvenlik Kalkanı: Şifreleri ve gizli anahtarları içeren dosyalar
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.cert
+credentials.json
+client_secret.json
